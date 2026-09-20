@@ -74,7 +74,8 @@ Le code est dans `src/lib/import/` : `lecture.ts` (fichier → lignes), `montant
 - Les titres de colonnes sont reconnus quels que soient l'ordre, les accents et la casse ; ils peuvent se trouver après quelques lignes de titre.
 - Une valeur illisible est une **erreur visible** (jamais devinée) et une ligne en erreur n'est **jamais importée**.
 - L'import est rejouable : un numéro de facture déjà enregistré pour l'entreprise est ignoré (« déjà importée »).
-- Un client est reconnu par son numéro et son nom ; en cas de doute (numéro partagé, nom connu avec un autre numéro), la ligne est « à choisir ».
+- Un client est reconnu par son numéro **et** son nom ; en cas de doute (numéro partagé, nom connu avec un autre numéro, numéro d'un client de nom différent), la ligne est « à choisir ». On ne rapproche jamais un client sur le seul numéro : le risque est de relancer la mauvaise personne.
+- Le fichier de test `tests/fixtures/creancio-import-test-sale.xlsx` fait foi : sa feuille « Résultat attendu » décrit le comportement réel (corrigée après l'étape 6) et `src/lib/import/fixture-sale.test.ts` la vérifie ligne par ligne.
 - La colonne « Date de facture » (ou « Date d'émission ») est facultative : si elle manque, la date du jour est utilisée et l'aperçu le signale. Elle sert au délai moyen de paiement.
 - Une facture importée est « Échue » si son échéance est passée, « À venir » sinon.
 
@@ -108,12 +109,25 @@ npm run db:migrate    # crée les tables dans PostgreSQL
 Les contraintes `@@unique` du schéma protègent contre les doublons : numéro de facture par entreprise,
 référence de transaction PayGate (paiement traité une seule fois), relance par facture et par étape.
 
-## Prochaines étapes (planning du cahier des charges)
+## État d'avancement
 
-1. S3–S4 : authentification, profil entreprise, clients, import Excel et saisie rapide
-2. S5–S6 : PayGate Global — liens de paiement, webhook, passage automatique à « Payée »
-3. S7–S8 : WhatsApp Cloud API via un BSP, planificateur de relances, repli SMS
-4. S9–S10 : brancher le tableau de bord sur les vraies données, export Excel
+**S3–S4 (comptes, entreprise, clients, factures) : étapes 1 à 6 faites et validées, étape 7 à faire.**
+
+| Étape | Contenu | État |
+|---|---|---|
+| 1 | Base de données PostgreSQL (Docker), schéma Prisma, seed | fait |
+| 2 | Authentification (Better Auth), session, isolation par entreprise | fait |
+| 3 | Onboarding en 3 étapes (entreprise, premier client, premières factures) | fait |
+| 4 | Clients : liste, recherche, création, modification, fiche ; numéro partagé confirmé | fait |
+| 5 | Import Excel/CSV : aperçu, erreurs visibles, rejouable, clients « à choisir », date de facture | fait |
+| 6 | Saisie rapide `/factures/nouvelle` avec file d'attente hors connexion | fait |
+| 7 | Tableau de bord et `/factures` branchés sur Prisma (fin de `mock-data.ts`), KPI vides « Disponible dès les premières relances », délai moyen de paiement | **à faire** |
+
+Hors périmètre pour l'instant : PayGate (liens de paiement, webhook), WhatsApp (BSP), planificateur de relances, export Excel.
+Ce qui est reporté volontairement est dans [TODO-PRODUCTION.md](TODO-PRODUCTION.md).
+
+Suite du planning du cahier des charges : S5–S6 PayGate Global (liens de paiement, webhook, passage à « Payée »),
+S7–S8 WhatsApp Cloud API via un BSP + planificateur de relances + repli SMS, S9–S10 export Excel.
 
 ### Base locale (Docker)
 

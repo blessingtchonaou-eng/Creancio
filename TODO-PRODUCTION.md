@@ -36,3 +36,11 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] La saisie charge au plus 1 000 clients pour chercher sans connexion. Au-delà, ajouter une recherche côté serveur.
 - [ ] Une facture gardée hors connexion pour un nouveau client ne peut pas encore réutiliser ce client dans la facture suivante
       sans le retaper (le serveur le reconnaît ensuite : même nom, même numéro).
+
+## Étape 7 (à prévoir)
+- [ ] Délai moyen de paiement : `Paiement.payeLe` moins `Facture.dateFacture`. Les factures importées sans colonne « Date de facture »
+      ont la date d'import comme date de facture : leur délai est faussé. À signaler sur le tableau de bord ou à corriger à la main.
+- [ ] Tableau de bord : remplacer `src/lib/mock-data.ts` par des requêtes Prisma filtrées par `entrepriseId`.
+
+## Données de test
+- [ ] Ancienne base `creancio` (60 clients, 250 factures, 200 paiements, 180 relances) : lecture seule. Prévoir un seed de démo plus riche à partir d'elle.

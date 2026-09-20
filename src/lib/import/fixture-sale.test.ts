@@ -179,6 +179,20 @@ describe("fichier sale : clients et déjà importées", () => {
   });
 });
 
+describe("fichier sale : jamais de rapprochement sur le seul numéro (clients du seed)", () => {
+  it.each([
+    [5, "Pharmacie du Port a le numéro de « Quincaillerie Agbéko » (nom différent)"],
+    [6, "« Hôtel Les Cocotiers » existe avec un autre numéro"],
+    [7, "« Boutique Ama Mode » existe avec un autre numéro"],
+    [8, "« Garage Kodjo & Fils » existe avec un autre numéro"],
+  ])("ligne %i : à choisir, jamais importée sans choix (%s)", (n) => {
+    const l = seed.get(n)!;
+    expect(l.statut).toBe("a_choisir");
+    expect(l.client).toBeUndefined();
+    expect(l.candidats?.length).toBeGreaterThan(0);
+  });
+});
+
 describe("fichier sale : règles absolues", () => {
   it("aucune ligne en erreur, à choisir ou déjà importée n'est prête à l'import (contexte vide et contexte du seed)", () => {
     for (const analyses of [vide, seed]) {
