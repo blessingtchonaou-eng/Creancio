@@ -9,7 +9,7 @@ import { Logo } from "./logo";
 import { NAV_ITEMS } from "./nav-items";
 
 function initials(name: string) {
-  return name.split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
 }
 
 export function AppHeader({ userName, companyName }: { userName: string; companyName: string }) {

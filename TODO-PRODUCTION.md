@@ -15,9 +15,9 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] Politique de confidentialité.
 
 ## Étape 3 (onboarding)
-- [ ] Confirmer le format officiel du NIF auprès de l'OTR et resserrer la règle dans `src/lib/validation/nif.ts`
-      (règle provisoire : 7 à 13 chiffres).
-- [ ] Vérifier le NIF auprès de l'OTR (aujourd'hui : format seulement).
+- [ ] Format du NIF à confirmer sur des factures réelles. Le format officiel de l'OTR n'est pas publié.
+      La règle de `src/lib/validation/nif.ts` (7 à 13 chiffres) ne fait qu'afficher un avertissement :
+      un NIF saisi n'est jamais refusé.
 
 ## Sécurité
 - [ ] Réexaminer `npm audit` quand un correctif Prisma 7.x sort (voir README, section « Sécurité »).

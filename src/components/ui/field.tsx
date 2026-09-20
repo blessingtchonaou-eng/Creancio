@@ -5,12 +5,14 @@ export interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   label: string;
   help?: string;
   error?: string;
+  /** Avertissement qui n'empêche pas d'enregistrer (ex. un NIF inhabituel). */
+  warning?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
 }
 
 /** Champ avec libellé, aide, erreur, préfixe (+228) et suffixe (FCFA). Texte à 16 px pour éviter le zoom sur mobile. */
-export function Field({ label, help, error, prefix, suffix, className, id, ...props }: FieldProps) {
+export function Field({ label, help, error, warning, prefix, suffix, className, id, ...props }: FieldProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const descId = `${inputId}-desc`;
@@ -31,15 +33,19 @@ export function Field({ label, help, error, prefix, suffix, className, id, ...pr
         <input
           id={inputId}
           aria-invalid={error ? true : undefined}
-          aria-describedby={help || error ? descId : undefined}
+          aria-describedby={help || error || warning ? descId : undefined}
           className="w-full bg-transparent text-ink outline-none placeholder:text-ink-muted disabled:cursor-not-allowed"
           {...props}
         />
         {suffix && <span className="font-semibold text-ink-muted">{suffix}</span>}
       </div>
-      {(error || help) && (
-        <p id={descId} className={cn("mt-1.5 text-body-sm", error ? "text-danger" : "text-ink-muted")}>
-          {error ?? help}
+      {(error || warning || help) && (
+        <p
+          id={descId}
+          role={warning && !error ? "status" : undefined}
+          className={cn("mt-1.5 text-body-sm", error ? "text-danger" : warning ? "rounded-sm bg-st-partial-bg px-2 py-1 font-medium text-st-partial-fg" : "text-ink-muted")}
+        >
+          {error ?? (warning ? `⚠ ${warning}` : help)}
         </p>
       )}
     </div>

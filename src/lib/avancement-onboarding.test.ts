@@ -42,11 +42,20 @@ describe("avancerOnboarding", () => {
 });
 
 describe("schémas de l'onboarding", () => {
-  it("entreprise : NIF facultatif mais validé s'il est saisi", () => {
+  it("entreprise : le nom est le seul champ obligatoire", () => {
+    expect(entrepriseSchema.safeParse({ raisonSociale: "Mensah SARL", nif: "", telephone: "" }).data).toEqual({
+      raisonSociale: "Mensah SARL",
+      nif: null,
+      telephone: null,
+    });
+    expect(entrepriseSchema.safeParse({ raisonSociale: "", nif: "", telephone: "" }).success).toBe(false);
+  });
+
+  it("entreprise : un NIF inhabituel est enregistré, un téléphone invalide est refusé", () => {
     const base = { raisonSociale: "Mensah SARL", telephone: "90 12 34 56" };
-    expect(entrepriseSchema.safeParse({ ...base, nif: "" }).data?.nif).toBeNull();
-    expect(entrepriseSchema.safeParse({ ...base, nif: "1001234567" }).data?.nif).toBe("1001234567");
-    expect(entrepriseSchema.safeParse({ ...base, nif: "ABC" }).success).toBe(false);
+    expect(entrepriseSchema.safeParse({ ...base, nif: "ABC" }).data?.nif).toBe("ABC");
+    expect(entrepriseSchema.safeParse({ ...base, nif: "1001234567" }).data?.telephone).toBe("+22890123456");
+    expect(entrepriseSchema.safeParse({ ...base, telephone: "123" }).success).toBe(false);
   });
 
   it("client : numéro normalisé en E.164, e-mail facultatif", () => {

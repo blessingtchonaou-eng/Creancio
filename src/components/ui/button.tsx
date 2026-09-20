@@ -1,4 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -18,6 +19,16 @@ const sizes: Record<Size, string> = {
   lg: "h-13 px-5.5 text-base rounded-[14px]",
 };
 
+function buttonClasses(variant: Variant, size: Size, className?: string) {
+  return cn(
+    "inline-flex items-center justify-center gap-2 font-semibold transition-colors",
+    "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted disabled:border-transparent",
+    variants[variant],
+    sizes[size],
+    className,
+  );
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
@@ -29,21 +40,30 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   return (
-    <button
-      ref={ref}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 font-semibold transition-colors",
-        "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted disabled:border-transparent",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
-      {...props}
-    >
+    <button ref={ref} disabled={disabled || loading} aria-busy={loading || undefined} className={buttonClasses(variant, size, className)} {...props}>
       {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {children}
     </button>
   );
 });
+
+/** Lien qui ressemble à un bouton (navigation vers une autre page). */
+export function ButtonLink({
+  href,
+  variant = "primary",
+  size = "md",
+  className,
+  children,
+}: {
+  href: string;
+  variant?: Variant;
+  size?: Size;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link href={href} className={buttonClasses(variant, size, className)}>
+      {children}
+    </Link>
+  );
+}

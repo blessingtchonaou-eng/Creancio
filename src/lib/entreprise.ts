@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 interface NouvelleEntreprise {
   raisonSociale: string;
   nif: string | null;
-  telephone: string;
+  telephone: string | null;
 }
 
 /**

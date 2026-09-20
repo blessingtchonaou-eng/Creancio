@@ -2,33 +2,33 @@ import { z } from "zod";
 
 /**
  * Format du NIF (numéro d'identification fiscale, OTR).
- * Règle PROVISOIRE : 7 à 13 chiffres, en attendant la confirmation du format officiel par l'OTR
- * (voir TODO-PRODUCTION.md). Elle est volontairement large pour ne pas refuser un NIF valide.
- * Pour la resserrer, ne modifier que cette constante.
+ * Le format officiel n'est pas publié : cette règle est une SUPPOSITION (7 à 13 chiffres) qui ne sert
+ * qu'à afficher un avertissement. Elle ne refuse JAMAIS un NIF saisi (voir TODO-PRODUCTION.md).
  */
 const FORMAT_NIF = /^\d{7,13}$/;
+
+const MAX_NIF = 30;
 
 /** Retire les espaces, points et tirets qu'on tape souvent en recopiant un NIF. */
 export function nettoyerNif(input: string): string {
   return input.replace(/[\s.-]/g, "");
 }
 
-export type ResultatNif = { ok: true; nif: string | null } | { ok: false; error: string };
-
-/** Le NIF est facultatif : vide → null. S'il est saisi, il doit respecter le format. */
-export function validerNif(input: string): ResultatNif {
+/** Le NIF saisi ressemble-t-il à un NIF ? Un champ vide est accepté (facultatif). */
+export function ressembleAUnNif(input: string): boolean {
   const nif = nettoyerNif(input);
-  if (nif === "") return { ok: true, nif: null };
-  if (!FORMAT_NIF.test(nif)) return { ok: false, error: "Le NIF contient uniquement des chiffres (7 à 13). Vérifiez-le ou laissez ce champ vide." };
-  return { ok: true, nif };
+  return nif === "" || FORMAT_NIF.test(nif);
 }
 
-/** Schéma zod du champ NIF facultatif. */
-export const nifSchema = z.string().transform((v, ctx) => {
-  const r = validerNif(v);
-  if (!r.ok) {
-    ctx.addIssue({ code: "custom", message: r.error });
-    return z.NEVER;
-  }
-  return r.nif;
-});
+export const AVERTISSEMENT_NIF = "Ce numéro ne ressemble pas à un NIF, vérifiez la saisie.";
+
+/** Valeur à enregistrer : vide → null ; format reconnu → nettoyé ; sinon tel que saisi (jamais refusé). */
+export function nifAEnregistrer(input: string): string | null {
+  const saisi = input.trim();
+  if (saisi === "") return null;
+  const nettoye = nettoyerNif(saisi);
+  return FORMAT_NIF.test(nettoye) ? nettoye : saisi;
+}
+
+/** Schéma zod du NIF facultatif : seule une longueur absurde est refusée, jamais le format. */
+export const nifSchema = z.string().max(MAX_NIF, "Ce NIF est trop long.").transform(nifAEnregistrer);

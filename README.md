@@ -76,6 +76,9 @@ npm run db:generate   # génère le client Prisma dans src/generated/prisma
 npm run db:migrate    # crée les tables dans PostgreSQL
 ```
 
+> **Après chaque migration, relancez `npm run dev`.** Le serveur de développement garde l'ancien client Prisma
+> en mémoire : sans redémarrage, les pages qui utilisent les nouveaux champs renvoient une erreur 500.
+
 Les contraintes `@@unique` du schéma protègent contre les doublons : numéro de facture par entreprise,
 référence de transaction PayGate (paiement traité une seule fois), relance par facture et par étape.
 
