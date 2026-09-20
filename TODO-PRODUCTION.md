@@ -27,3 +27,12 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] Import de gros volumes (au-delà de 1 000 lignes) : traitement en arrière-plan avec suivi de progression.
 - [ ] Pas de correspondance approximative des noms de clients (« Agbo Kofi » et « Kofi Agbo » sont deux noms) : les cas ambigus passent par « à choisir ».
 - [ ] Contrôle antivirus des fichiers déposés.
+
+## Étape 6 (saisie rapide)
+- [ ] Mode hors connexion allégé : la file d'attente ne marche que si la page est déjà ouverte quand le réseau tombe.
+      Ouvrir `/factures/nouvelle` sans connexion demande le service worker PWA (voir « Application »).
+- [ ] La file d'attente est gardée dans le navigateur (localStorage, une file par entreprise). La vider à la déconnexion
+      (téléphone partagé) et ne pas y garder de données sensibles au-delà du nom et du numéro du client.
+- [ ] La saisie charge au plus 1 000 clients pour chercher sans connexion. Au-delà, ajouter une recherche côté serveur.
+- [ ] Une facture gardée hors connexion pour un nouveau client ne peut pas encore réutiliser ce client dans la facture suivante
+      sans le retaper (le serveur le reconnaît ensuite : même nom, même numéro).

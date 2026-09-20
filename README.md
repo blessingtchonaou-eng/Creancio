@@ -78,6 +78,15 @@ Le code est dans `src/lib/import/` : `lecture.ts` (fichier → lignes), `montant
 - La colonne « Date de facture » (ou « Date d'émission ») est facultative : si elle manque, la date du jour est utilisée et l'aperçu le signale. Elle sert au délai moyen de paiement.
 - Une facture importée est « Échue » si son échéance est passée, « À venir » sinon.
 
+## Saisie rapide (/factures/nouvelle)
+
+Pensée pour le téléphone : client cherché ou créé sur place, montant avec espaces automatiques, numéro FA-AAAA-NNNN proposé (modifiable),
+date de facture pré-remplie à aujourd’hui, bouton « Enregistrer et en ajouter une autre ». Les règles sont dans `src/lib/factures-saisie.ts`
+(partagées avec le serveur), l’écriture dans `src/lib/factures.ts`.
+
+Mode hors connexion allégé : sans réseau, la facture est gardée sur le téléphone (`src/lib/file-attente.ts`, localStorage) puis envoyée
+au retour de la connexion. Envoyer deux fois la même facture ne crée aucun doublon. Le service worker complet est dans TODO-PRODUCTION.md.
+
 ## Conventions
 
 - Montants en FCFA stockés en entiers ; affichage avec `formatFCFA()` / `formatAmount()`.
