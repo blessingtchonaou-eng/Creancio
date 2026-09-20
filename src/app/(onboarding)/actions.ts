@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { creerClient } from "@/lib/clients";
 import { db } from "@/lib/db";
 import {
   avancerOnboarding,
@@ -43,7 +44,8 @@ export async function ajouterPremierClient(_prev: FormState, formData: FormData)
   const parsed = clientSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues), values };
 
-  await db.client.create({ data: { ...parsed.data, entrepriseId } });
+  const r = await creerClient(entrepriseId, parsed.data);
+  if (!r.ok) return { fieldErrors: { whatsapp: r.error }, values };
   await avancerOnboarding(entrepriseId, ETAPE_FACTURES);
   redirect(urlEtape(ETAPE_FACTURES));
 }

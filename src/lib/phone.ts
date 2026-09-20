@@ -23,6 +23,11 @@ export function normalizeTogoPhone(input: string): PhoneResult {
   return { ok: true, e164: `+228${digits}` };
 }
 
+/** +22890123456 → « 90 12 34 56 » (pour un champ de saisie qui affiche déjà le préfixe +228) */
+export function nationalTogoPhone(e164: string): string {
+  return formatTogoPhone(e164).replace(/^\+228 /, "");
+}
+
 /** +22890123456 → « +228 90 12 34 56 » */
 export function formatTogoPhone(e164: string): string {
   const m = /^\+228(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164);

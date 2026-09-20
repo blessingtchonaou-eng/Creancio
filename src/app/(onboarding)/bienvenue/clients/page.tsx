@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { passerEtapeClient } from "@/app/(onboarding)/actions";
-import { ClientForm } from "@/components/onboarding/client-form";
-import { BackLink, SkipButton } from "@/components/onboarding/step-nav";
+import { ajouterPremierClient, passerEtapeClient } from "@/app/(onboarding)/actions";
+import { ClientForm } from "@/components/clients/client-form";
+import { SkipButton } from "@/components/onboarding/step-nav";
+import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { requireOnboardingEnCours } from "@/lib/onboarding";
@@ -19,7 +20,7 @@ export default async function PremierClientPage() {
           <h1 className="font-display text-h1 font-medium">Ajoutez un client</h1>
           <p className="mt-1 text-body-sm text-ink-muted">Choisissez un client qui vous doit de l&apos;argent. Vous en ajouterez d&apos;autres ensuite.</p>
         </div>
-        <ClientForm />
+        <ClientForm action={ajouterPremierClient} submitLabel="Ajouter ce client" />
       </Card>
       <SkipButton action={passerEtapeClient} />
     </div>

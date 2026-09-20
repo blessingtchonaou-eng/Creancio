@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { FileSpreadsheet, PenLine } from "lucide-react";
 import { passerEtapeFactures, terminerVersImport, terminerVersSaisie } from "@/app/(onboarding)/actions";
-import { BackLink, SkipButton } from "@/components/onboarding/step-nav";
+import { SkipButton } from "@/components/onboarding/step-nav";
+import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { SubmitButton } from "@/components/ui/submit-button";

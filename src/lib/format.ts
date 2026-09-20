@@ -17,6 +17,11 @@ export function formatCompact(value: number): string {
   return formatAmount(value);
 }
 
+/** Date (colonne @db.Date, à minuit UTC) → « 2026-09-25 » */
+export function toIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 /** « 2026-09-25 » → « 25/09/2026 » */
 export function formatDate(iso: string): string {
   const [y, m, d] = iso.split("-");
