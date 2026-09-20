@@ -60,3 +60,18 @@ référence de transaction PayGate (paiement traité une seule fois), relance pa
 2. S5–S6 : PayGate Global — liens de paiement, webhook, passage automatique à « Payée »
 3. S7–S8 : WhatsApp Cloud API via un BSP, planificateur de relances, repli SMS
 4. S9–S10 : brancher le tableau de bord sur les vraies données, export Excel
+
+### Base locale (Docker)
+
+```bash
+docker compose up -d      # PostgreSQL 16 sur le port 5432
+npm run db:migrate        # crée les tables
+npm run db:seed           # entreprise de démonstration
+```
+
+`DATABASE_URL` pointe sur la base `creancio_dev`, avec son propre rôle. Si votre volume Docker `creancio-data`
+existe déjà, créez-les une fois :
+
+```bash
+docker compose exec db psql -U creancio -d postgres -c "CREATE ROLE creancio_dev LOGIN PASSWORD 'motdepasse' CREATEDB" -c "CREATE DATABASE creancio_dev OWNER creancio_dev"
+```
