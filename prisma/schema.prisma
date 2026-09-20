@@ -133,7 +133,8 @@ model Client {
   createdAt    DateTime   @default(now())
   factures     Facture[]
 
-  @@index([entrepriseId])
+  // Index simple, pas d'unicité : un même numéro peut servir à plusieurs clients (boutique et gérant, famille).
+  @@index([entrepriseId, whatsapp])
 }
 
 model Facture {

@@ -20,7 +20,7 @@ export default async function PremierClientPage() {
           <h1 className="font-display text-h1 font-medium">Ajoutez un client</h1>
           <p className="mt-1 text-body-sm text-ink-muted">Choisissez un client qui vous doit de l&apos;argent. Vous en ajouterez d&apos;autres ensuite.</p>
         </div>
-        <ClientForm action={ajouterPremierClient} submitLabel="Ajouter ce client" />
+        <ClientForm action={ajouterPremierClient} submitLabel="Ajouter ce client" ouvrirFiche={false} />
       </Card>
       <SkipButton action={passerEtapeClient} />
     </div>

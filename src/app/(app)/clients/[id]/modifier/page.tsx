@@ -24,6 +24,8 @@ export default async function ModifierClientPage({ params }: { params: Promise<{
         <ClientForm
           action={modifierClientAction.bind(null, client.id)}
           submitLabel="Enregistrer les changements"
+          confirmLabel="Enregistrer quand même"
+          confirmQuestion="Enregistrer quand même ce numéro ?"
           initial={{ nom: client.nom, whatsapp: nationalTogoPhone(client.whatsapp), email: client.email ?? "" }}
         />
       </Card>

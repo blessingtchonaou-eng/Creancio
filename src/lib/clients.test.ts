@@ -47,10 +47,18 @@ describe("clients : données et isolation entre entreprises", () => {
     await db.$disconnect();
   });
 
-  it("le même numéro peut exister dans deux entreprises, mais pas deux fois dans la même", async () => {
-    const doublon = await creerClient(A, { nom: "Autre nom", whatsapp: "+22890123456", email: null });
-    expect(doublon).toMatchObject({ ok: false, error: expect.stringContaining("Kofi Agbo") });
+  it("un numéro déjà utilisé demande confirmation : rien n'est créé tant que l'utilisateur n'a pas confirmé", async () => {
+    const donnees = { nom: "Boutique Agbo", whatsapp: "+22890123456", email: null };
+    const doublon = await creerClient(A, donnees);
+    expect(doublon).toEqual({ ok: false, doublon: [{ id: clientA, nom: "Kofi Agbo" }] });
     expect(await db.client.count({ where: { entrepriseId: A } })).toBe(1);
+
+    const confirme = await creerClient(A, donnees, { confirmerDoublon: true });
+    expect(confirme.ok).toBe(true);
+    expect(await db.client.count({ where: { entrepriseId: A, whatsapp: "+22890123456" } })).toBe(2);
+    // le même numéro dans une autre entreprise n'a jamais posé de question
+    expect(await db.client.count({ where: { entrepriseId: B, whatsapp: "+22890123456" } })).toBe(1);
+    await db.client.deleteMany({ where: { entrepriseId: A, nom: "Boutique Agbo" } });
   });
 
   it("calcule le total dû : ni les factures payées ni les annulées, moins les paiements partiels", async () => {
@@ -85,17 +93,19 @@ describe("clients : données et isolation entre entreprises", () => {
     expect(intact.whatsapp).toBe("+22890123456");
   });
 
-  it("modifie un client de l'entreprise et refuse le numéro d'un autre client", async () => {
+  it("modifie un client de l'entreprise ; un numéro déjà utilisé demande confirmation", async () => {
     const autre = await creerClient(A, { nom: "Yao Test", whatsapp: "+22870000001", email: null });
     if (!autre.ok) throw new Error("préparation impossible");
     expect(await modifierClient(A, autre.id, { nom: "Yao Modifié", whatsapp: "+22870000001", email: "yao@example.com" })).toEqual({ ok: true, id: autre.id });
     expect((await db.client.findUniqueOrThrow({ where: { id: autre.id } })).nom).toBe("Yao Modifié");
-    expect(await modifierClient(A, autre.id, { nom: "Yao", whatsapp: "+22890123456", email: null })).toMatchObject({ ok: false, error: expect.any(String) });
+    const donnees = { nom: "Yao", whatsapp: "+22890123456", email: null };
+    expect(await modifierClient(A, autre.id, donnees)).toEqual({ ok: false, doublon: [{ id: clientA, nom: "Kofi Agbo" }] });
+    expect(await modifierClient(A, autre.id, donnees, { confirmerDoublon: true })).toEqual({ ok: true, id: autre.id });
   });
 
   it("recherche par nom (sans tenir compte des majuscules) ou par numéro, et pagine", async () => {
     expect((await listerClients(A, { q: "kofi" })).total).toBe(1);
-    expect((await listerClients(A, { q: "90 12 34" })).total).toBe(1);
+    expect((await listerClients(A, { q: "90 12 34" })).total).toBe(2); // Kofi et Yao, qui partagent ce numéro depuis le test précédent
     expect((await listerClients(A, { q: "zzz" })).lignes).toEqual([]);
 
     await db.client.createMany({

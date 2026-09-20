@@ -8,6 +8,8 @@ export interface FormState {
   values?: Record<string, string>;
   /** Message de réussite (quand l'écran reste affiché). */
   success?: string;
+  /** Numéro déjà utilisé par d'autres clients : l'utilisateur doit confirmer ou ouvrir la fiche existante. */
+  doublon?: { whatsapp: string; clients: { id: string; nom: string }[] };
 }
 
 /** Transforme les erreurs zod en erreurs par champ (la première erreur de chaque champ). */

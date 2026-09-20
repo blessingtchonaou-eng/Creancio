@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import type { StatutFacture } from "@/generated/prisma/enums";
-import { nationalTogoPhone } from "@/lib/phone";
 
 /**
  * Toutes les fonctions de ce fichier prennent l'entrepriseId de la session (jamais du navigateur)
@@ -19,32 +18,54 @@ export interface DonneesClient {
   email: string | null;
 }
 
+export interface ClientMemeNumero {
+  id: string;
+  nom: string;
+}
+
+/** Créer ou modifier un client : succès, client introuvable, ou numéro déjà utilisé (l'utilisateur doit confirmer). */
 export type ResultatClient =
   | { ok: true; id: string }
   | { ok: false; introuvable: true }
-  | { ok: false; introuvable?: false; error: string };
+  | { ok: false; doublon: ClientMemeNumero[] };
 
-async function nomDuDoublon(entrepriseId: string, whatsapp: string, sauf?: string) {
-  const autre = await db.client.findFirst({
+/** Autres clients de l'entreprise qui ont déjà ce numéro. Un même numéro peut servir à plusieurs clients : c'est un avertissement, pas une interdiction. */
+export async function clientsAvecNumero(entrepriseId: string, whatsapp: string, sauf?: string): Promise<ClientMemeNumero[]> {
+  return db.client.findMany({
     where: { entrepriseId, whatsapp, ...(sauf ? { id: { not: sauf } } : {}) },
-    select: { nom: true },
+    select: { id: true, nom: true },
+    orderBy: { nom: "asc" },
   });
-  return autre?.nom ?? null;
 }
 
-const messageDoublon = (nom: string, whatsapp: string) => `Le numéro ${nationalTogoPhone(whatsapp)} est déjà celui de « ${nom} ».`;
-
-export async function creerClient(entrepriseId: string, data: DonneesClient): Promise<Extract<ResultatClient, { ok: true } | { error: string }>> {
-  const doublon = await nomDuDoublon(entrepriseId, data.whatsapp);
-  if (doublon) return { ok: false, error: messageDoublon(doublon, data.whatsapp) };
+/** Sans confirmation, un numéro déjà utilisé n'enregistre rien et renvoie les clients concernés. */
+export async function creerClient(
+  entrepriseId: string,
+  data: DonneesClient,
+  { confirmerDoublon = false }: { confirmerDoublon?: boolean } = {},
+): Promise<Exclude<ResultatClient, { introuvable: true }>> {
+  if (!confirmerDoublon) {
+    const doublon = await clientsAvecNumero(entrepriseId, data.whatsapp);
+    if (doublon.length > 0) return { ok: false, doublon };
+  }
   const client = await db.client.create({ data: { ...data, entrepriseId }, select: { id: true } });
   return { ok: true, id: client.id };
 }
 
-export async function modifierClient(entrepriseId: string, id: string, data: DonneesClient): Promise<ResultatClient> {
-  const doublon = await nomDuDoublon(entrepriseId, data.whatsapp, id);
-  if (doublon) return { ok: false, error: messageDoublon(doublon, data.whatsapp) };
-  // Le filtre entrepriseId est dans la mise à jour elle-même : un identifiant d'une autre entreprise ne touche rien.
+export async function modifierClient(
+  entrepriseId: string,
+  id: string,
+  data: DonneesClient,
+  { confirmerDoublon = false }: { confirmerDoublon?: boolean } = {},
+): Promise<ResultatClient> {
+  // Le filtre entrepriseId est dans chaque requête : l'identifiant d'un client d'une autre entreprise ne touche rien.
+  const actuel = await db.client.findFirst({ where: { id, entrepriseId }, select: { whatsapp: true } });
+  if (!actuel) return { ok: false, introuvable: true };
+  // On ne prévient que si le numéro change : modifier le nom d'un client dont le numéro est déjà partagé reste possible.
+  if (!confirmerDoublon && actuel.whatsapp !== data.whatsapp) {
+    const doublon = await clientsAvecNumero(entrepriseId, data.whatsapp, id);
+    if (doublon.length > 0) return { ok: false, doublon };
+  }
   const r = await db.client.updateMany({ where: { id, entrepriseId }, data });
   return r.count === 1 ? { ok: true, id } : { ok: false, introuvable: true };
 }

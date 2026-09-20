@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { creerClient } from "@/lib/clients";
+import { doublonConfirme, etatDoublon } from "@/lib/clients-form";
 import { db } from "@/lib/db";
 import {
   avancerOnboarding,
@@ -44,8 +45,8 @@ export async function ajouterPremierClient(_prev: FormState, formData: FormData)
   const parsed = clientSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues), values };
 
-  const r = await creerClient(entrepriseId, parsed.data);
-  if (!r.ok) return { fieldErrors: { whatsapp: r.error }, values };
+  const r = await creerClient(entrepriseId, parsed.data, { confirmerDoublon: doublonConfirme(formData, parsed.data.whatsapp) });
+  if (!r.ok) return etatDoublon(values, parsed.data.whatsapp, r.doublon);
   await avancerOnboarding(entrepriseId, ETAPE_FACTURES);
   redirect(urlEtape(ETAPE_FACTURES));
 }
