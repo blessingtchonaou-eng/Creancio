@@ -11,12 +11,14 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:up": "docker compose up -d",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:http": "vitest run --config vitest.http.config.mts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
     "better-auth": "^1.7.5",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "pg": "^8.23.0",

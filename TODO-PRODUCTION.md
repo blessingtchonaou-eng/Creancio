@@ -21,3 +21,12 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 
 ## Sécurité
 - [ ] Réexaminer `npm audit` quand un correctif Prisma 7.x sort (voir README, section « Sécurité »).
+
+## Étape 5 (import)
+- [ ] Colonne « Date de facture » : l'import ne la lit pas, la date de facture est la date d'import (`Facture.createdAt`).
+      Le délai moyen de paiement du tableau de bord sera faux pour les factures importées tant qu'elle n'existe pas
+      (ajouter un champ `dateFacture` au schéma, puis lire la colonne).
+- [ ] Import : ajouter la colonne facultative « Statut » (facture déjà payée) et « Montant payé ».
+- [ ] Import de gros volumes (au-delà de 1 000 lignes) : traitement en arrière-plan avec suivi de progression.
+- [ ] Pas de correspondance approximative des noms de clients (« Agbo Kofi » et « Kofi Agbo » sont deux noms) : les cas ambigus passent par « à choisir ».
+- [ ] Contrôle antivirus des fichiers déposés.

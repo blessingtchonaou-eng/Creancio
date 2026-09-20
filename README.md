@@ -49,7 +49,7 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   (COLLABORATEUR), `autre@creancio.tg` (ADMIN d'une autre entreprise, pour les tests d'isolation).
   Mot de passe : variable `DEMO_PASSWORD`, sinon la valeur par défaut de `prisma/seed.ts`.
 
-Tests : `npm test` (Vitest). Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant.
+Tests : `npm test` (Vitest). `npm run test:http` vérifie, sur un serveur qui tourne (`npm run dev`), les codes HTTP et l'isolation entre entreprises. Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant.
 
 ## Sécurité
 
@@ -59,7 +59,23 @@ l'application utilise PostgreSQL, pas MySQL. `npm audit fix --force` installerai
 majeure) et des `overrides` risqueraient de casser la CLI : rien n'est appliqué.
 **À réexaminer** dès qu'un correctif Prisma 7.x est publié : relancer `npm audit`, puis `npm update prisma`.
 
+**`exceljs`** (lecture des fichiers .xlsx de l'import) : 2 alertes « moderate » sur `uuid` (dépassement de tampon de `uuid` v3/v5/v6
+appelé avec un tampon). exceljs n'appelle que `uuid.v4()` sans tampon : la faille n'est pas atteignable. `npm audit fix --force`
+installerait exceljs 3.4.0 (changement de version majeure, plus ancien) : rien n'est appliqué. À réexaminer à chaque mise à jour d'exceljs.
+
 Les reports avant mise en production sont listés dans [TODO-PRODUCTION.md](TODO-PRODUCTION.md).
+
+## Import de factures (/factures/import)
+
+Fichier Excel (.xlsx) ou CSV, 2 Mo et 1 000 lignes au maximum. Modèle téléchargeable sur la page.
+Le code est dans `src/lib/import/` : `lecture.ts` (fichier → lignes), `montant.ts` et `date.ts` (formats), `analyse.ts`
+(règles, sans base de données) et `serveur.ts` (contexte de l'entreprise et écriture).
+
+- Les titres de colonnes sont reconnus quels que soient l'ordre, les accents et la casse ; ils peuvent se trouver après quelques lignes de titre.
+- Une valeur illisible est une **erreur visible** (jamais devinée) et une ligne en erreur n'est **jamais importée**.
+- L'import est rejouable : un numéro de facture déjà enregistré pour l'entreprise est ignoré (« déjà importée »).
+- Un client est reconnu par son numéro et son nom ; en cas de doute (numéro partagé, nom connu avec un autre numéro), la ligne est « à choisir ».
+- Une facture importée est « Échue » si son échéance est passée, « À venir » sinon.
 
 ## Conventions
 

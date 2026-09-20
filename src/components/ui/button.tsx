@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
-type Size = "md" | "lg" | "sm";
+export type Variant = "primary" | "secondary" | "ghost" | "danger";
+export type Size = "md" | "lg" | "sm";
 
 const variants: Record<Variant, string> = {
   primary: "bg-primary text-on-primary hover:bg-primary-strong",
@@ -19,7 +19,8 @@ const sizes: Record<Size, string> = {
   lg: "h-13 px-5.5 text-base rounded-[14px]",
 };
 
-function buttonClasses(variant: Variant, size: Size, className?: string) {
+/** Classes d'un bouton, pour un lien ou une balise <a> qui doit lui ressembler. */
+export function buttonClasses(variant: Variant, size: Size, className?: string) {
   return cn(
     "inline-flex items-center justify-center gap-2 font-semibold transition-colors",
     "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted disabled:border-transparent",
