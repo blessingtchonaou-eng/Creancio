@@ -30,3 +30,21 @@ export async function creerEntrepriseEtRattacher(userId: string, data: NouvelleE
 }
 
 class DejaRattache extends Error {}
+
+/** Étapes de l'onboarding : la valeur stockée est la prochaine étape à faire. */
+export const ETAPE_CLIENT = 2;
+export const ETAPE_FACTURES = 3;
+export const ETAPE_TERMINEE = 4;
+
+/** Écran de reprise pour une étape donnée. */
+export function urlEtape(etape: number): string {
+  if (etape <= 1) return "/bienvenue";
+  if (etape === ETAPE_CLIENT) return "/bienvenue/clients";
+  if (etape === ETAPE_FACTURES) return "/bienvenue/factures";
+  return "/tableau-de-bord";
+}
+
+/** Fait avancer l'onboarding, jamais reculer : revenir en arrière ne fait rien perdre. */
+export async function avancerOnboarding(entrepriseId: string, etape: number): Promise<void> {
+  await db.entreprise.updateMany({ where: { id: entrepriseId, etapeOnboarding: { lt: etape } }, data: { etapeOnboarding: etape } });
+}

@@ -1,12 +1,19 @@
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { ETAPE_TERMINEE, urlEtape } from "@/lib/entreprise";
 import { requireEntreprise } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Redirige vers /connexion (pas de session) ou /bienvenue (pas d'entreprise) avant tout affichage.
   const { user, entrepriseId } = await requireEntreprise();
-  const entreprise = await db.entreprise.findUniqueOrThrow({ where: { id: entrepriseId }, select: { raisonSociale: true } });
+  const entreprise = await db.entreprise.findUniqueOrThrow({
+    where: { id: entrepriseId },
+    select: { raisonSociale: true, etapeOnboarding: true },
+  });
+  // Onboarding commencé mais pas terminé : on reprend là où l'utilisateur s'était arrêté.
+  if (entreprise.etapeOnboarding < ETAPE_TERMINEE) redirect(urlEtape(entreprise.etapeOnboarding));
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[1280px] flex-col gap-5 px-4 pt-5 pb-24 sm:px-6 lg:px-8 lg:pb-8">

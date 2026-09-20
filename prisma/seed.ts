@@ -69,7 +69,7 @@ async function main() {
   await db.entreprise.deleteMany({ where: { id: { in: [DEMO_ENTREPRISE_ID, AUTRE_ENTREPRISE_ID] } } });
 
   await db.entreprise.create({
-    data: { id: DEMO_ENTREPRISE_ID, raisonSociale: "Établissements Mensah & Frères", nif: "1001234567", telephone: "+22822212345" },
+    data: { id: DEMO_ENTREPRISE_ID, raisonSociale: "Établissements Mensah & Frères", nif: "1001234567", telephone: "+22822212345", etapeOnboarding: 4 },
   });
   const clients = await Promise.all(
     CLIENTS.map((c) => db.client.create({ data: { ...c, entrepriseId: DEMO_ENTREPRISE_ID } })),
@@ -103,7 +103,7 @@ async function main() {
   }
 
   // Une seconde entreprise, pour vérifier qu'aucune donnée ne fuit de l'une à l'autre.
-  const autre = await db.entreprise.create({ data: { id: AUTRE_ENTREPRISE_ID, raisonSociale: "Autre Entreprise SARL" } });
+  const autre = await db.entreprise.create({ data: { id: AUTRE_ENTREPRISE_ID, raisonSociale: "Autre Entreprise SARL", etapeOnboarding: 4 } });
   const clientAutre = await db.client.create({
     data: { entrepriseId: autre.id, nom: "Client de l'autre entreprise", whatsapp: "+22893000000" },
   });

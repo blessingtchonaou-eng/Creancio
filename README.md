@@ -51,6 +51,16 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
 
 Tests : `npm test` (Vitest). Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant.
 
+## Sécurité
+
+**`npm audit` : 4 alertes « high » acceptées.** Elles viennent de la CLI `prisma` (`@prisma/config` → `deepmerge-ts`
+et le pilote MySQL `mysql2`). C'est une dépendance de développement : elle n'est jamais exécutée en production et
+l'application utilise PostgreSQL, pas MySQL. `npm audit fix --force` installerait Prisma 6 (changement de version
+majeure) et des `overrides` risqueraient de casser la CLI : rien n'est appliqué.
+**À réexaminer** dès qu'un correctif Prisma 7.x est publié : relancer `npm audit`, puis `npm update prisma`.
+
+Les reports avant mise en production sont listés dans [TODO-PRODUCTION.md](TODO-PRODUCTION.md).
+
 ## Conventions
 
 - Montants en FCFA stockés en entiers ; affichage avec `formatFCFA()` / `formatAmount()`.

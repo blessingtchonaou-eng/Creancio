@@ -49,6 +49,8 @@ model Entreprise {
   telephone     String?
   logoUrl       String?
   signature     String?
+  // Prochaine étape de l'onboarding : 2 = premier client, 3 = premières factures, 4 = terminé.
+  etapeOnboarding Int      @default(2)
   createdAt     DateTime   @default(now())
   utilisateurs  Utilisateur[]
   clients       Client[]
