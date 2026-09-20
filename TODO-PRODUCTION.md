@@ -37,10 +37,17 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] Une facture gardée hors connexion pour un nouveau client ne peut pas encore réutiliser ce client dans la facture suivante
       sans le retaper (le serveur le reconnaît ensuite : même nom, même numéro).
 
-## Étape 7 (à prévoir)
-- [ ] Délai moyen de paiement : `Paiement.payeLe` moins `Facture.dateFacture`. Les factures importées sans colonne « Date de facture »
-      ont la date d'import comme date de facture : leur délai est faussé. À signaler sur le tableau de bord ou à corriger à la main.
-- [ ] Tableau de bord : remplacer `src/lib/mock-data.ts` par des requêtes Prisma filtrées par `entrepriseId`.
+## Étape 7 (tableau de bord et liste des factures)
+- [x] Délai moyen de paiement : les factures importées sans date de facture sont marquées `dateFactureEstimee` et exclues du calcul (la carte le signale).
+- [x] Tableau de bord : `src/lib/mock-data.ts` remplacé par des requêtes Prisma filtrées par `entrepriseId`.
+- [ ] Les factures importées AVANT la migration `date_facture_estimee` ne sont pas marquées (base de développement seulement) : leur délai reste faussé.
+- [ ] Le statut « À venir » → « Échue » n'est pas écrit en base : `statutAffiche()` le corrige à l'affichage. À faire écrire par le planificateur de relances (S7–S8).
+- [ ] « Aujourd'hui » est calculé en UTC (`aujourdhuiIso`, `src/lib/status.ts`), juste parce que le Togo est à UTC+0 toute l'année.
+      À revoir si le produit s'ouvre à un pays d'un autre fuseau.
+- [ ] `/factures/[id]` (fiche d'une facture) à construire : la liste renvoie pour l'instant vers la fiche du client.
+- [ ] Index `(entrepriseId, echeance)` sur `Facture` si les volumes grossissent (tri par échéance de la liste).
+- [ ] Tableau de bord : mises en forme « Efficacité des relances » et « Scénario actif » gardées dans `src/components/dashboard/a-venir/`, à brancher avec les relances.
+- [ ] Tableau de bord : pas de sélecteur de période (le chiffre « encaissé » est celui du mois courant).
 
 ## Données de test
 - [ ] Ancienne base `creancio` (60 clients, 250 factures, 200 paiements, 180 relances) : lecture seule. Prévoir un seed de démo plus riche à partir d'elle.

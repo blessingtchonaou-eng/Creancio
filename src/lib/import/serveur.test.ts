@@ -82,6 +82,13 @@ describe("importerFactures", () => {
     expect(par["FA-T-2102"]).toBe(new Date().toISOString().slice(0, 10));
   });
 
+  it("marque la date de facture comme estimée quand elle manque (exclue du délai moyen de paiement)", async () => {
+    await importerFactures(A, [ligne(2201, { dateFacture: "01/09/2026", echeance: "01/10/2026" }), ligne(2202, { echeance: "01/10/2026" })], {});
+    const trouvees = await db.facture.findMany({ where: { entrepriseId: A, numero: { in: ["FA-T-2201", "FA-T-2202"] } } });
+    const estimee = Object.fromEntries(trouvees.map((f) => [f.numero, f.dateFactureEstimee]));
+    expect(estimee).toEqual({ "FA-T-2201": false, "FA-T-2202": true });
+  });
+
   it("ISOLATION : le même numéro de facture est libre dans une autre entreprise, et ses clients restent les siens", async () => {
     const r = await importerFactures(B, [ligne(1, { client: "Client 1" })], {});
     expect(r).toMatchObject({ importees: 1, dejaImportees: 0, clientsCrees: 1 });

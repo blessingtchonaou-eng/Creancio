@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { aujourdhuiIso, statutAffiche } from "@/lib/status";
 import type { Prisma } from "@/generated/prisma/client";
 import type { StatutFacture } from "@/generated/prisma/enums";
 
@@ -181,7 +182,7 @@ export async function trouverClient(entrepriseId: string, id: string): Promise<F
     whatsapp: client.whatsapp,
     email: client.email,
     relancesEnPause: client.relancesEnPause,
-    factures: client.factures,
+    factures: client.factures.map((f) => ({ ...f, statut: statutAffiche(f.statut, f.echeance, aujourdhuiIso()) })),
     nbFacturesDues: dues.length,
     totalDu: dues.reduce((somme, f) => somme + (f.montant - f.montantPaye), 0),
   };

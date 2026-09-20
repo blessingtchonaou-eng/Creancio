@@ -37,4 +37,4 @@ quoi corriger, sans s'excuser.
 - Proposer un plan avant tout changement important et attendre mon accord.
 - Après chaque étape : npm run typecheck et npm run build doivent passer.
 - Ne pas ajouter de dépendance sans expliquer pourquoi.
-- Données de démo : src/lib/mock-data.ts, à remplacer progressivement par Prisma.
+- Données de démo : prisma/seed.ts.

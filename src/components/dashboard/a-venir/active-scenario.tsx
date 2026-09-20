@@ -1,3 +1,5 @@
+// À VENIR — pas encore branché. Cette mise en forme (étapes du scénario de relance) resservira quand les scénarios
+// existeront (étapes 7-8 du planning). D'ici là, le tableau de bord affiche un EmptyState.
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { formatOffset } from "@/lib/format";

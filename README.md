@@ -10,7 +10,7 @@ cp .env.example .env      # renseigner DATABASE_URL, puis les clés PayGate et W
 npm run dev               # http://localhost:3000
 ```
 
-L'application s'ouvre sur le tableau de bord, alimenté pour l'instant par des données de démonstration (`src/lib/mock-data.ts`).
+L'application s'ouvre sur le tableau de bord, alimenté par la base de données (`npm run db:seed` crée l'entreprise de démonstration).
 
 ## Stack
 
@@ -25,14 +25,16 @@ src/
     globals.css              design system Baobab : tokens Tailwind, mode sombre (.dark)
     layout.tsx               polices, métadonnées
     (app)/layout.tsx         en-tête + navigation mobile en bas
-    (app)/tableau-de-bord/   écran principal
-    (app)/factures|clients|relances|paiements/   écrans à construire
+    (app)/tableau-de-bord/   écran principal (KPI réels : encours, en retard, encaissé du mois, délai moyen)
+    (app)/factures/          liste (filtres, recherche, tri, pagination), import, saisie rapide
+    (app)/clients/           liste, fiche, création, modification
+    (app)/relances|paiements/   écrans à construire
   components/
-    ui/                      Button, StatusBadge, Field, SearchInput, FilterChips,
+    ui/                      Button, StatusBadge, Field, SearchInput, RechercheUrl, FilterChips, FiltresLiens,
                              KpiCard, Sparkline, Card, Toast, EmptyState, ErrorState, Skeleton
     layout/                  AppHeader, BottomNav, Logo
-    dashboard/               PriorityInvoices, ReminderEfficiency, ActiveScenario
-  lib/                       types, formatage FCFA et dates, statuts, données de démo
+    dashboard/               FacturesASuivre, BlocRelancesAVenir ; a-venir/ : mises en forme gardées pour les relances
+  lib/                       types, formatage FCFA et dates, statuts (statutAffiche), tableau-de-bord.ts, factures-liste.ts
 prisma/schema.prisma         modèle de données du cahier des charges
 ```
 
@@ -88,6 +90,23 @@ date de facture pré-remplie à aujourd’hui, bouton « Enregistrer et en ajout
 Mode hors connexion allégé : sans réseau, la facture est gardée sur le téléphone (`src/lib/file-attente.ts`, localStorage) puis envoyée
 au retour de la connexion. Envoyer deux fois la même facture ne crée aucun doublon. Le service worker complet est dans TODO-PRODUCTION.md.
 
+## Tableau de bord et liste des factures
+
+Aucun chiffre n'est inventé. Ce qui dépend des relances (relances du jour, efficacité, scénario) affiche « Disponible dès les premières relances ».
+Les chiffres sont calculés dans `src/lib/tableau-de-bord.ts`, la liste dans `src/lib/factures-liste.ts` ; les deux filtrent par `entrepriseId`.
+
+- **Encours** : factures non payées (À venir, Échue, En relance, Partielle, Suspendue), montant moins paiements partiels.
+- **En retard** : la part de l'encours dont l'échéance est passée.
+- **Encaissé ce mois** : somme des paiements dont la date est dans le mois courant. La comparaison au mois dernier n'apparaît que s'il y a eu des paiements.
+- **Délai moyen de paiement** : pour chaque facture payée, dernier paiement moins date de facture ; moyenne des factures dont la date de facture est connue.
+  Une facture importée sans date de facture (`dateFactureEstimee`) n'est pas comptée, et la carte le dit.
+- **Statut affiché** : le statut est écrit à la création et aucun planificateur ne le met à jour. `statutAffiche()` (`src/lib/status.ts`) affiche « Échue »
+  une facture « À venir » dont l'échéance est passée ; les filtres SQL appliquent la même règle.
+- **« Aujourd'hui »** est le jour UTC : juste pour le Togo (UTC+0 toute l'année, pas d'heure d'été).
+- **/factures** : filtre « À encaisser » par défaut, puces de statut (liens, sans JavaScript), tri par échéance, 25 par page.
+  **Une recherche (numéro ou client) porte sur toutes les factures**, quel que soit le filtre, et l'écran le dit.
+- La fiche d'une facture (`/factures/[id]`) n'existe pas encore : le nom du client ouvre la fiche du client.
+
 ## Conventions
 
 - Montants en FCFA stockés en entiers ; affichage avec `formatFCFA()` / `formatAmount()`.
@@ -111,7 +130,7 @@ référence de transaction PayGate (paiement traité une seule fois), relance pa
 
 ## État d'avancement
 
-**S3–S4 (comptes, entreprise, clients, factures) : étapes 1 à 6 faites et validées, étape 7 à faire.**
+**S3–S4 (comptes, entreprise, clients, factures) : étapes 1 à 7 faites.**
 
 | Étape | Contenu | État |
 |---|---|---|
@@ -121,7 +140,7 @@ référence de transaction PayGate (paiement traité une seule fois), relance pa
 | 4 | Clients : liste, recherche, création, modification, fiche ; numéro partagé confirmé | fait |
 | 5 | Import Excel/CSV : aperçu, erreurs visibles, rejouable, clients « à choisir », date de facture | fait |
 | 6 | Saisie rapide `/factures/nouvelle` avec file d'attente hors connexion | fait |
-| 7 | Tableau de bord et `/factures` branchés sur Prisma (fin de `mock-data.ts`), KPI vides « Disponible dès les premières relances », délai moyen de paiement | **à faire** |
+| 7 | Tableau de bord et `/factures` branchés sur Prisma (fin de `mock-data.ts`), KPI vides « Disponible dès les premières relances », délai moyen de paiement | fait |
 
 Hors périmètre pour l'instant : PayGate (liens de paiement, webhook), WhatsApp (BSP), planificateur de relances, export Excel.
 Ce qui est reporté volontairement est dans [TODO-PRODUCTION.md](TODO-PRODUCTION.md).

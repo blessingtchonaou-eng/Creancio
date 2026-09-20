@@ -149,6 +149,8 @@ model Facture {
   montant         Int // FCFA, entier
   montantPaye     Int              @default(0)
   dateFacture     DateTime         @default(now()) @db.Date // date d’émission : base du délai moyen de paiement
+  // Vrai quand la date d'émission n'était pas dans le fichier importé (on a mis la date d'import) : exclue du délai moyen de paiement.
+  dateFactureEstimee Boolean       @default(false)
   echeance        DateTime         @db.Date
   statut          StatutFacture    @default(A_VENIR)
   lienPaiement    String?

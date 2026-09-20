@@ -1,3 +1,5 @@
+// À VENIR — pas encore branché. Cette mise en forme (anneau « payées / lues / non lues ») resservira quand les relances
+// existeront (étapes 7-8 du planning, WhatsApp + planificateur). D'ici là, le tableau de bord affiche un EmptyState.
 import { Card } from "@/components/ui/card";
 
 interface Results { sent: number; paid: number; readPending: number; unread: number }

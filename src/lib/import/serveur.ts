@@ -63,6 +63,7 @@ export async function importerFactures(entrepriseId: string, brutes: readonly Li
           numero: l.numero!,
           montant: l.montant!,
           dateFacture: new Date(`${l.dateFacture!}T00:00:00.000Z`),
+          dateFactureEstimee: l.dateFactureParDefaut === true,
           echeance: new Date(`${l.echeance!}T00:00:00.000Z`),
           statut: statutSelonEcheance(l.echeance!, aujourd),
         };
