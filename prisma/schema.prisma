@@ -1,0 +1,163 @@
+// Modèle de données Créancio — issu du cahier des charges (section 5)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  COLLABORATEUR
+}
+
+enum StatutFacture {
+  A_VENIR
+  ECHUE
+  EN_RELANCE
+  PARTIELLEMENT_PAYEE
+  PAYEE
+  SUSPENDUE
+  ANNULEE
+}
+
+enum Operateur {
+  FLOOZ
+  MIXX
+}
+
+enum Canal {
+  WHATSAPP
+  SMS
+}
+
+enum StatutRelance {
+  PLANIFIEE
+  ENVOYEE
+  LUE
+  ECHEC
+  ANNULEE
+}
+
+model Entreprise {
+  id            String     @id @default(cuid())
+  raisonSociale String
+  nif           String?
+  telephone     String?
+  logoUrl       String?
+  signature     String?
+  createdAt     DateTime   @default(now())
+  utilisateurs  Utilisateur[]
+  clients       Client[]
+  factures      Facture[]
+  scenarios     ScenarioRelance[]
+}
+
+model Utilisateur {
+  id           String     @id @default(cuid())
+  entrepriseId String
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  nom          String
+  email        String     @unique
+  motDePasse   String // haché
+  role         Role       @default(COLLABORATEUR)
+  createdAt    DateTime   @default(now())
+}
+
+model Client {
+  id           String     @id @default(cuid())
+  entrepriseId String
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  nom          String
+  whatsapp     String // format E.164, ex. +22890123456
+  email        String?
+  relancesEnPause Boolean @default(false)
+  createdAt    DateTime   @default(now())
+  factures     Facture[]
+
+  @@index([entrepriseId])
+}
+
+model Facture {
+  id              String           @id @default(cuid())
+  entrepriseId    String
+  entreprise      Entreprise       @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          Client           @relation(fields: [clientId], references: [id])
+  scenarioId      String?
+  scenario        ScenarioRelance? @relation(fields: [scenarioId], references: [id])
+  numero          String
+  montant         Int // FCFA, entier
+  montantPaye     Int              @default(0)
+  echeance        DateTime         @db.Date
+  statut          StatutFacture    @default(A_VENIR)
+  lienPaiement    String?
+  createdAt       DateTime         @default(now())
+  paiements       Paiement[]
+  relances        Relance[]
+
+  @@unique([entrepriseId, numero]) // numérotation OTR sans doublon
+  @@index([entrepriseId, statut])
+}
+
+model Paiement {
+  id          String    @id @default(cuid())
+  factureId   String
+  facture     Facture   @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  montant     Int
+  operateur   Operateur
+  referenceTx String    @unique // référence PayGate : empêche un double traitement
+  payeLe      DateTime
+  createdAt   DateTime  @default(now())
+}
+
+model ScenarioRelance {
+  id           String         @id @default(cuid())
+  entrepriseId String
+  entreprise   Entreprise     @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  nom          String
+  parDefaut    Boolean        @default(false)
+  etapes       EtapeRelance[]
+  factures     Facture[]
+}
+
+model EtapeRelance {
+  id          String          @id @default(cuid())
+  scenarioId  String
+  scenario    ScenarioRelance @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  decalage    Int // jours par rapport à l'échéance : -3, 0, 7, 15
+  titre       String
+  canal       Canal           @default(WHATSAPP)
+  templateId  String // nom du template WhatsApp validé par Meta
+  repliSms    Boolean         @default(true)
+}
+
+model Relance {
+  id          String        @id @default(cuid())
+  factureId   String
+  facture     Facture       @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  decalage    Int
+  canal       Canal
+  statut      StatutRelance @default(PLANIFIEE)
+  prevueLe    DateTime
+  envoyeeLe   DateTime?
+  lueLe       DateTime?
+  erreur      String?
+
+  @@unique([factureId, decalage, canal]) // aucun double envoi
+  @@index([statut, prevueLe])
+}
+
+model EvenementWebhook {
+  id         String   @id @default(cuid())
+  source     String // "paygate" | "whatsapp"
+  reference  String
+  payload    Json
+  traite     Boolean  @default(false)
+  recuLe     DateTime @default(now())
+
+  @@unique([source, reference])
+}

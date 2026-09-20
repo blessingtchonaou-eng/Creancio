@@ -1,0 +1,143 @@
+/* Créancio — Design system « Baobab »
+   Tailwind CSS v4 : à placer dans app/globals.css (Next.js).
+   Mode sombre : ajouter la classe "dark" sur <html>. */
+
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* Polices (chargées avec next/font : Fraunces + Instrument Sans) */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-instrument), "Helvetica Neue", Arial, sans-serif;
+
+  /* Couleurs sémantiques — pointent vers les variables ci-dessous */
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-muted: var(--c-surface-muted);
+  --color-ink: var(--c-ink);
+  --color-ink-muted: var(--c-ink-muted);
+  --color-border: var(--c-border);
+  --color-border-strong: var(--c-border-strong);
+  --color-primary: var(--c-primary);
+  --color-primary-strong: var(--c-primary-strong);
+  --color-on-primary: var(--c-on-primary);
+  --color-mustard: var(--c-mustard);
+  --color-inverse: var(--c-inverse);
+  --color-on-inverse: var(--c-on-inverse);
+  --color-success: var(--c-success);
+  --color-danger: var(--c-danger);
+  --color-info: var(--c-info);
+
+  /* Statuts de facture (fond / texte) */
+  --color-st-upcoming-bg: var(--c-st-upcoming-bg);
+  --color-st-upcoming-fg: var(--c-st-upcoming-fg);
+  --color-st-overdue-bg: var(--c-st-overdue-bg);
+  --color-st-overdue-fg: var(--c-st-overdue-fg);
+  --color-st-reminding-bg: var(--c-st-reminding-bg);
+  --color-st-reminding-fg: var(--c-st-reminding-fg);
+  --color-st-partial-bg: var(--c-st-partial-bg);
+  --color-st-partial-fg: var(--c-st-partial-fg);
+  --color-st-paid-bg: var(--c-st-paid-bg);
+  --color-st-paid-fg: var(--c-st-paid-fg);
+  --color-st-paused-bg: var(--c-st-paused-bg);
+  --color-st-paused-fg: var(--c-st-paused-fg);
+  --color-st-cancelled-bg: var(--c-st-cancelled-bg);
+  --color-st-cancelled-fg: var(--c-st-cancelled-fg);
+
+  /* Typographie : taille / interligne */
+  --text-display: 2.75rem;   --text-display--line-height: 3rem;
+  --text-h1: 2rem;           --text-h1--line-height: 2.375rem;
+  --text-h2: 1.25rem;        --text-h2--line-height: 1.625rem;
+  --text-h3: 1.0625rem;      --text-h3--line-height: 1.5rem;
+  --text-body: 0.9375rem;    --text-body--line-height: 1.375rem;
+  --text-body-sm: 0.875rem;  --text-body-sm--line-height: 1.25rem;
+  --text-caption: 0.75rem;   --text-caption--line-height: 1rem;
+
+  /* Rayons */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  /* Ombres (réservées aux éléments flottants) */
+  --shadow-card: 0 1px 2px rgb(35 42 27 / 0.08);
+  --shadow-float: 0 8px 24px rgb(35 42 27 / 0.14);
+
+  /* Espacement : base 4 px (p-1 = 4 px, p-4 = 16 px…) */
+  --spacing: 4px;
+}
+
+:root {
+  --c-bg: #F3F2EA;
+  --c-surface: #FFFFFB;
+  --c-surface-muted: #ECEBE0;
+  --c-ink: #232A1B;
+  --c-ink-muted: #585C4C;
+  --c-border: #E1E0D2;
+  --c-border-strong: #D0CFBE;
+  --c-primary: #4F6B2A;
+  --c-primary-strong: #3A4F1E;
+  --c-on-primary: #FFFFFB;
+  --c-mustard: #E5C35C;
+  --c-inverse: #2F3B22;
+  --c-on-inverse: #FFFFFB;
+  --c-success: #2F6B3F;
+  --c-danger: #A5462B;
+  --c-info: #2F5E7A;
+
+  --c-st-upcoming-bg: #ECEBE0;  --c-st-upcoming-fg: #4A4D3F;
+  --c-st-overdue-bg: #F6DED6;   --c-st-overdue-fg: #8A3520;
+  --c-st-reminding-bg: #F6E7B4; --c-st-reminding-fg: #6B4E05;
+  --c-st-partial-bg: #E1EAF1;   --c-st-partial-fg: #2F4A66;
+  --c-st-paid-bg: #DDEBD9;      --c-st-paid-fg: #2F6B3F;
+  --c-st-paused-bg: #EAE4D8;    --c-st-paused-fg: #5A4A36;
+  --c-st-cancelled-bg: #EEEEEA; --c-st-cancelled-fg: #6A6A62;
+}
+
+.dark {
+  --c-bg: #141811;
+  --c-surface: #1C2118;
+  --c-surface-muted: #2A3025;
+  --c-ink: #EEEDE3;
+  --c-ink-muted: #A7AA98;
+  --c-border: #2D3327;
+  --c-border-strong: #3A4232;
+  --c-primary: #A8C47A;
+  --c-primary-strong: #C3D99E;
+  --c-on-primary: #141811;
+  --c-mustard: #E5C35C;
+  --c-inverse: #EEEDE3;
+  --c-on-inverse: #141811;
+  --c-success: #86C98F;
+  --c-danger: #E58B6F;
+  --c-info: #8DB8D4;
+
+  --c-st-upcoming-bg: #2A3025;  --c-st-upcoming-fg: #C8CBB8;
+  --c-st-overdue-bg: #3D221A;   --c-st-overdue-fg: #F0A58E;
+  --c-st-reminding-bg: #3A3218; --c-st-reminding-fg: #E9CC72;
+  --c-st-partial-bg: #1D2B36;   --c-st-partial-fg: #9EC3DC;
+  --c-st-paid-bg: #1C3322;      --c-st-paid-fg: #94D19C;
+  --c-st-paused-bg: #302A20;    --c-st-paused-fg: #D2C3A8;
+  --c-st-cancelled-bg: #262923; --c-st-cancelled-fg: #9C9E92;
+}
+
+/* Base */
+@layer base {
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  body {
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--c-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -1,0 +1,19 @@
+# Base PostgreSQL locale : docker compose up -d
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: creancio
+      POSTGRES_PASSWORD: motdepasse
+      POSTGRES_DB: creancio
+    ports:
+      - "5432:5432"
+    volumes:
+      - creancio-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creancio"]
+      interval: 5s
+      retries: 10
+volumes:
+  creancio-data:
