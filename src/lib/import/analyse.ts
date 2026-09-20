@@ -24,7 +24,14 @@ export interface ContexteAnalyse {
   /** Numéros de facture déjà enregistrés pour l'entreprise (seuls ceux du fichier sont nécessaires). */
   numerosExistants: ReadonlySet<string>;
   clients: readonly ClientConnu[];
+  /** Jour de l'import (AAAA-MM-JJ, UTC) : date de facture par défaut. Vaut le jour même si l'appelant ne le fournit pas. */
+  aujourdhui?: string;
 }
+
+export const jourDuJour = () => new Date().toISOString().slice(0, 10);
+
+/** Une facture dont l'échéance est passée est « Échue » dès l'import ; sinon « À venir ». */
+export const statutSelonEcheance = (echeance: string, aujourdhui: string) => (echeance < aujourdhui ? ("ECHUE" as const) : ("A_VENIR" as const));
 
 /** Choix de l'utilisateur pour un client à départager : identifiant du client existant, ou NOUVEAU_CLIENT. */
 export const NOUVEAU_CLIENT = "nouveau";
@@ -45,6 +52,9 @@ export interface LigneAnalysee {
   numero?: string;
   montant?: number;
   echeance?: string; // AAAA-MM-JJ
+  dateFacture?: string; // AAAA-MM-JJ
+  /** Aucune date de facture dans le fichier : la date du jour est utilisée. */
+  dateFactureParDefaut?: boolean;
   client?: ClientRetenu;
 }
 
@@ -109,6 +119,20 @@ function analyserUneLigne(brute: LigneBrute, contexte: ContexteAnalyse, choix: C
   const echeance = parserDate(brute.echeance);
   if (!echeance.ok) erreurs.echeance = echeance.error;
 
+  // Date de facture facultative : absente, on retombe sur le jour de l'import, et l'aperçu le dit.
+  const aujourdhui = contexte.aujourdhui ?? jourDuJour();
+  let dateFacture = aujourdhui;
+  const dateFactureParDefaut = brute.dateFacture.trim() === "";
+  if (!dateFactureParDefaut) {
+    const d = parserDate(brute.dateFacture);
+    if (d.ok) dateFacture = d.iso;
+    else erreurs.dateFacture = d.error;
+  }
+  // Une échéance avant la date de facture est une faute de saisie : on la montre au lieu de la corriger en silence.
+  if (!dateFactureParDefaut && !erreurs.dateFacture && echeance.ok && echeance.iso < dateFacture) {
+    erreurs.echeance = "L'échéance est avant la date de facture. Vérifiez les deux dates.";
+  }
+
   let email: string | null = null;
   if (brute.email.trim() !== "") {
     const e = emailSchema.safeParse(brute.email.trim());
@@ -123,6 +147,8 @@ function analyserUneLigne(brute: LigneBrute, contexte: ContexteAnalyse, choix: C
     numero: numero || undefined,
     montant: montant.ok ? montant.valeur : undefined,
     echeance: echeance.ok ? echeance.iso : undefined,
+    dateFacture: erreurs.dateFacture ? undefined : dateFacture,
+    dateFactureParDefaut,
   };
   if (erreurs.client || erreurs.telephone) return base;
 

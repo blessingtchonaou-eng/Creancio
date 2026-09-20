@@ -148,6 +148,7 @@ model Facture {
   numero          String
   montant         Int // FCFA, entier
   montantPaye     Int              @default(0)
+  dateFacture     DateTime         @default(now()) @db.Date // date d’émission : base du délai moyen de paiement
   echeance        DateTime         @db.Date
   statut          StatutFacture    @default(A_VENIR)
   lienPaiement    String?

@@ -8,17 +8,20 @@ export interface LigneBrute {
   client: string;
   telephone: string;
   montant: string;
+  dateFacture: string;
   echeance: string;
   email: string;
 }
 
-export const CHAMPS_LIGNE: Colonne[] = ["numero", "client", "telephone", "montant", "echeance", "email"];
+export const CHAMPS_LIGNE: Colonne[] = ["numero", "client", "telephone", "montant", "dateFacture", "echeance", "email"];
 
 export interface Lecture {
   lignes: LigneBrute[];
   /** Colonnes du fichier qu'on ne connaît pas (elles sont ignorées, mais on le dit). */
   colonnesIgnorees: string[];
   avertissements: string[];
+  /** Le fichier a une colonne « Date de facture » : sinon la date du jour est utilisée, et l'aperçu le signale. */
+  colonneDateFacture: boolean;
   /** Feuille lue (fichiers Excel). */
   feuille?: string;
 }

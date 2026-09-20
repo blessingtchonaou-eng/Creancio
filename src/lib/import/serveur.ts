@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
-import { analyserLignes, espaces, cleClient, type Analyse, type Choix, type ContexteAnalyse } from "./analyse";
+import { analyserLignes, espaces, cleClient, jourDuJour, statutSelonEcheance, type Analyse, type Choix, type ContexteAnalyse } from "./analyse";
 import type { LigneBrute } from "./types";
 
 /**
@@ -30,8 +30,6 @@ export interface ResultatImport {
   clientsCrees: number;
 }
 
-const aujourdhui = () => new Date().toISOString().slice(0, 10);
-
 /**
  * Importe les lignes prêtes, et seulement elles. L'analyse est refaite ici avec les données réelles : rien de ce qui vient
  * du navigateur (statuts, clients retenus) n'est cru. Rejouable : un numéro déjà enregistré est ignoré, jamais dupliqué.
@@ -42,7 +40,7 @@ export async function importerFactures(entrepriseId: string, brutes: readonly Li
   const resultat: ResultatImport = { importees: 0, aCorriger: comptes.aCorriger, dejaImportees: comptes.dejaImportees, clientsCrees: 0 };
   if (pretes.length === 0) return resultat;
 
-  const aujourd = aujourdhui();
+  const aujourd = jourDuJour();
   return db.$transaction(
     async (tx) => {
       // Un client à créer par couple (numéro, nom) : dix factures de « Kofi Agbo » ne créent qu'un client.
@@ -64,8 +62,9 @@ export async function importerFactures(entrepriseId: string, brutes: readonly Li
           clientId,
           numero: l.numero!,
           montant: l.montant!,
+          dateFacture: new Date(`${l.dateFacture!}T00:00:00.000Z`),
           echeance: new Date(`${l.echeance!}T00:00:00.000Z`),
-          statut: l.echeance! < aujourd ? ("ECHUE" as const) : ("A_VENIR" as const),
+          statut: statutSelonEcheance(l.echeance!, aujourd),
         };
       });
       // skipDuplicates : si une autre importation a enregistré un numéro entre-temps, il est ignoré (contrainte d'unicité).

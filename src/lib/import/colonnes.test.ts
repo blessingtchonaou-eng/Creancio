@@ -29,12 +29,15 @@ describe("reconnaissance des en-têtes", () => {
     ["Montant TTC", "montant"],
     ["E-mail", "email"],
     ["Courriel", "email"],
+    ["Date de facture", "dateFacture"],
+    ["Date facture", "dateFacture"],
+    ["Date d'émission", "dateFacture"],
+    ["Date d'échéance", "echeance"],
   ])("« %s » → %s", (entete, colonne) => {
     expect(reconnaitreColonne(entete)).toBe(colonne);
   });
 
   it("ne devine pas les colonnes ambiguës ou inconnues", () => {
-    expect(reconnaitreColonne("Date de facture")).toBeNull();
     expect(reconnaitreColonne("Montant payé")).toBeNull();
     expect(reconnaitreColonne("Montant HT")).toBeNull();
     expect(reconnaitreColonne("Commentaire")).toBeNull();

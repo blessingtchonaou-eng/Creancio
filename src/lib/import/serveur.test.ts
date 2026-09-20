@@ -14,6 +14,7 @@ const ligne = (n: number, surcharge: Partial<LigneBrute> = {}): LigneBrute => ({
   client: `Client ${n % 50}`,
   telephone: `9000${String(n % 50).padStart(4, "0")}`,
   montant: "150 000",
+  dateFacture: "",
   echeance: "25/10/2099",
   email: "",
   ...surcharge,
@@ -71,6 +72,14 @@ describe("importerFactures", () => {
     await importerFactures(A, [ligne(2001, { echeance: "01/01/2020" }), ligne(2002, { echeance: "01/01/2099" })], {});
     const statuts = Object.fromEntries((await db.facture.findMany({ where: { entrepriseId: A, numero: { in: ["FA-T-2001", "FA-T-2002"] } } })).map((f) => [f.numero, f.statut]));
     expect(statuts).toEqual({ "FA-T-2001": "ECHUE", "FA-T-2002": "A_VENIR" });
+  });
+
+  it("enregistre la date de facture fournie, ou le jour de l'import quand elle est vide", async () => {
+    await importerFactures(A, [ligne(2101, { dateFacture: "01/09/2026", echeance: "01/10/2026" }), ligne(2102, { echeance: "01/10/2026" })], {});
+    const trouvees = await db.facture.findMany({ where: { entrepriseId: A, numero: { in: ["FA-T-2101", "FA-T-2102"] } } });
+    const par = Object.fromEntries(trouvees.map((f) => [f.numero, f.dateFacture.toISOString().slice(0, 10)]));
+    expect(par["FA-T-2101"]).toBe("2026-09-01");
+    expect(par["FA-T-2102"]).toBe(new Date().toISOString().slice(0, 10));
   });
 
   it("ISOLATION : le même numéro de facture est libre dans une autre entreprise, et ses clients restent les siens", async () => {

@@ -32,9 +32,9 @@ describe("lireFichier : Excel", () => {
     const lecture = await lireFichier("test.xlsx", fichier);
     expect(lecture.colonnesIgnorees).toEqual(["Commentaire"]);
     expect(lecture.lignes).toEqual([
-      { ligne: 4, numero: "FA-1", client: "Kofi Agbo", telephone: "90123456", montant: "1250000", echeance: "25/10/2026", email: "" },
-      { ligne: 6, numero: "FA-2", client: "Ama Mensah", telephone: "+228 90 12 34 56", montant: "1 250 000 FCFA", echeance: "25/10/2026", email: "" },
-      { ligne: 8, numero: "FA-3", client: "Yao", telephone: "0022870123456", montant: "75000", echeance: expect.stringMatching(/^\d{2}\/\d{2}\/20\d{2}$/), email: "" },
+      { ligne: 4, dateFacture: "", numero: "FA-1", client: "Kofi Agbo", telephone: "90123456", montant: "1250000", echeance: "25/10/2026", email: "" },
+      { ligne: 6, dateFacture: "", numero: "FA-2", client: "Ama Mensah", telephone: "+228 90 12 34 56", montant: "1 250 000 FCFA", echeance: "25/10/2026", email: "" },
+      { ligne: 8, dateFacture: "", numero: "FA-3", client: "Yao", telephone: "0022870123456", montant: "75000", echeance: expect.stringMatching(/^\d{2}\/\d{2}\/20\d{2}$/), email: "" },
     ]);
   });
 

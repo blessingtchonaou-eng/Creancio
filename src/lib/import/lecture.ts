@@ -26,7 +26,7 @@ function simplifier(v: ExcelJS.CellValue | undefined): Cellule {
 function versTexte(cellule: Cellule | undefined, colonne: Colonne | null): string {
   if (cellule === null || cellule === undefined) return "";
   if (cellule instanceof Date) return dateExcelVersTexte(cellule);
-  if (typeof cellule === "number") return colonne === "echeance" ? serieExcelVersTexte(cellule) : String(cellule);
+  if (typeof cellule === "number") return colonne === "echeance" || colonne === "dateFacture" ? serieExcelVersTexte(cellule) : String(cellule);
   if (typeof cellule === "boolean") return cellule ? "VRAI" : "FAUX";
   return cellule.trim();
 }
@@ -83,13 +83,13 @@ function extraireLignes(grille: LigneGrille[]): Lecture | { erreur: string } {
   const lignes: LigneBrute[] = [];
   for (const { ligne, cellules } of grille.slice(entetes.indexLigne + 1)) {
     if (cellules.every(estVide)) continue; // ligne entièrement vide : ignorée
-    const brute: LigneBrute = { ligne, numero: "", client: "", telephone: "", montant: "", echeance: "", email: "" };
+    const brute: LigneBrute = { ligne, numero: "", client: "", telephone: "", montant: "", dateFacture: "", echeance: "", email: "" };
     for (const [index, colonne] of entetes.colonnes) brute[colonne] = versTexte(cellules[index], colonne);
     lignes.push(brute);
     if (lignes.length > LIGNES_MAX) throw new ErreurImport(`Ce fichier contient plus de ${LIGNES_MAX.toLocaleString("fr-FR")} lignes. Divisez-le en plusieurs fichiers.`);
   }
   if (lignes.length === 0) return { erreur: "Ce fichier ne contient aucune facture sous les titres de colonnes." };
-  return { lignes, colonnesIgnorees: entetes.ignorees, avertissements: entetes.avertissements };
+  return { lignes, colonnesIgnorees: entetes.ignorees, avertissements: entetes.avertissements, colonneDateFacture: [...entetes.colonnes.values()].includes("dateFacture") };
 }
 
 async function grillesXlsx(octets: Uint8Array): Promise<{ nom: string; grille: LigneGrille[] }[]> {

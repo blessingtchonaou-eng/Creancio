@@ -43,7 +43,7 @@ const CLIENTS = [
   { nom: "Boutique Ama Mode", whatsapp: "+22870567890", email: null },
 ];
 
-// 15 factures, tous les statuts. Les factures payées ont des délais de paiement différents.
+// 16 factures, tous les statuts. Les factures payées ont des délais de paiement différents.
 const FACTURES: Ligne[] = [
   { numero: "FA-2026-0001", client: 3, montant: 475_000, paye: 475_000, emise: -70, echeance: -40, statut: "PAYEE", payeLe: -42 },
   { numero: "FA-2026-0002", client: 0, montant: 320_000, paye: 320_000, emise: -55, echeance: -25, statut: "PAYEE", payeLe: -20 },
@@ -60,6 +60,8 @@ const FACTURES: Ligne[] = [
   { numero: "FA-2026-0013", client: 0, montant: 2_000_000, emise: -1, echeance: 30, statut: "A_VENIR" },
   { numero: "FA-2026-0014", client: 3, montant: 560_000, emise: -45, echeance: -20, statut: "SUSPENDUE" },
   { numero: "FA-2026-0015", client: 2, montant: 130_000, emise: -20, echeance: -5, statut: "ANNULEE" },
+  // Numéro visé par le fichier de test de l'import (tests/fixtures) : « déjà en base ».
+  { numero: "FA-2026-0129", client: 3, montant: 475_000, emise: -30, echeance: -3, statut: "ECHUE" },
 ];
 
 async function main() {
@@ -84,9 +86,9 @@ async function main() {
         numero: f.numero,
         montant: f.montant,
         montantPaye: f.paye ?? 0,
+        dateFacture: jour(f.emise),
         echeance: jour(f.echeance),
         statut: f.statut,
-        createdAt: jour(f.emise),
       },
     });
     if (f.paye && f.payeLe !== undefined) {

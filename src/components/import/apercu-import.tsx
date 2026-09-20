@@ -187,6 +187,11 @@ export function ApercuImport({ nomFichier, lecture, analyseInitiale, onAutreFich
               Ces colonnes ne sont pas importées.
             </Toast>
           )}
+          {!lecture.colonneDateFacture && (
+            <Toast tone="info" title="Pas de colonne « Date de facture » : la date du jour est utilisée">
+              Ajoutez cette colonne pour que le délai moyen de paiement soit exact. Vous pouvez aussi remplir la date sur chaque ligne ci-dessous.
+            </Toast>
+          )}
           {lecture.avertissements.map((a) => (
             <Toast key={a} tone="info" title={a} />
           ))}
@@ -210,6 +215,7 @@ export function ApercuImport({ nomFichier, lecture, analyseInitiale, onAutreFich
                   key={brute.ligne}
                   brute={brute}
                   analyse={parLigne.get(brute.ligne)}
+                  colonneDateFacture={lecture.colonneDateFacture}
                   choix={parLigne.get(brute.ligne)?.cleClient ? choix[parLigne.get(brute.ligne)!.cleClient!] : undefined}
                   onModifier={(champ, valeur) => modifier(brute.ligne, champ, valeur)}
                   onChoisir={choisir}

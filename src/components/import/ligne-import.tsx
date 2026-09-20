@@ -13,6 +13,8 @@ interface Props {
   brute: LigneBrute;
   analyse: LigneAnalysee | undefined;
   choix: string | undefined;
+  /** Le fichier a une colonne « Date de facture » (sinon l'aperçu l'explique une fois, en haut). */
+  colonneDateFacture: boolean;
   onModifier: (champ: Colonne, valeur: string) => void;
   onChoisir: (cle: string, valeur: string) => void;
   onRetirer: () => void;
@@ -26,11 +28,11 @@ const bordure = {
 } as const;
 
 /** Une ligne du fichier : ses cellules modifiables, ses erreurs, et le choix du client quand il est ambigu. */
-export function LigneImport({ brute, analyse, choix, onModifier, onChoisir, onRetirer }: Props) {
+export function LigneImport({ brute, analyse, choix, colonneDateFacture, onModifier, onChoisir, onRetirer }: Props) {
   const statut = analyse?.statut ?? "erreur";
   const erreurs = analyse?.erreurs ?? {};
   const figee = statut === "deja_importee";
-  const champ = (nom: Colonne, libelle: string, extra: { placeholder?: string; inputMode?: "numeric" | "tel" | "text" } = {}) => (
+  const champ = (nom: Colonne, libelle: string, extra: { placeholder?: string; inputMode?: "numeric" | "tel" | "text"; warning?: string } = {}) => (
     <Field
       label={libelle}
       value={brute[nom]}
@@ -66,7 +68,13 @@ export function LigneImport({ brute, analyse, choix, onModifier, onChoisir, onRe
         {champ("montant", "Montant (FCFA)", { inputMode: "numeric" })}
         {champ("echeance", "Échéance", { placeholder: "25/10/2026" })}
       </div>
-      {(brute.email !== "" || erreurs.email) && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{champ("email", "E-mail", { inputMode: "text" })}</div>}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {champ("dateFacture", "Date de facture", {
+          placeholder: "Aujourd'hui",
+          warning: colonneDateFacture && analyse?.dateFactureParDefaut && !erreurs.dateFacture ? "Case vide : la date du jour est utilisée." : undefined,
+        })}
+        {(brute.email !== "" || erreurs.email) && champ("email", "E-mail", { inputMode: "text" })}
+      </div>
 
       {statut === "a_choisir" && analyse?.candidats && analyse.cleClient && (
         <div className="flex flex-col gap-1.5 rounded-md bg-st-partial-bg p-3 text-st-partial-fg">

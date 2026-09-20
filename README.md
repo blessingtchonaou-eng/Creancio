@@ -75,6 +75,7 @@ Le code est dans `src/lib/import/` : `lecture.ts` (fichier → lignes), `montant
 - Une valeur illisible est une **erreur visible** (jamais devinée) et une ligne en erreur n'est **jamais importée**.
 - L'import est rejouable : un numéro de facture déjà enregistré pour l'entreprise est ignoré (« déjà importée »).
 - Un client est reconnu par son numéro et son nom ; en cas de doute (numéro partagé, nom connu avec un autre numéro), la ligne est « à choisir ».
+- La colonne « Date de facture » (ou « Date d'émission ») est facultative : si elle manque, la date du jour est utilisée et l'aperçu le signale. Elle sert au délai moyen de paiement.
 - Une facture importée est « Échue » si son échéance est passée, « À venir » sinon.
 
 ## Conventions

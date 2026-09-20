@@ -1,4 +1,4 @@
-export type Colonne = "numero" | "client" | "telephone" | "montant" | "echeance" | "email";
+export type Colonne = "numero" | "client" | "telephone" | "montant" | "dateFacture" | "echeance" | "email";
 
 export const COLONNES_OBLIGATOIRES: Colonne[] = ["numero", "client", "montant", "echeance"];
 
@@ -7,6 +7,7 @@ export const LIBELLE_COLONNE: Record<Colonne, string> = {
   client: "Client",
   telephone: "Téléphone WhatsApp",
   montant: "Montant (FCFA)",
+  dateFacture: "Date de facture",
   echeance: "Échéance",
   email: "E-mail",
 };
@@ -31,6 +32,7 @@ const ALIAS: Record<Colonne, string[]> = {
     "whatsappclient", "mobile", "portable", "gsm", "contact", "numerotelephone", "numerodetelephone",
   ],
   montant: ["montant", "montantfcfa", "montantenfcfa", "montantxof", "montantttc", "montantdu", "montanttotal", "montantfacture", "total", "totalttc", "totalfcfa"],
+  dateFacture: ["datefacture", "datedefacture", "datefact", "dateemission", "datedemission", "emission", "dateemissionfacture", "datedemissiondefacture"],
   echeance: ["echeance", "dateecheance", "datedecheance", "echeancele", "echeancedepaiement", "datelimite", "datelimitedepaiement"],
   email: ["email", "mail", "courriel", "adresseemail", "emailclient", "adressemail"],
 };
@@ -38,6 +40,7 @@ const ALIAS: Record<Colonne, string[]> = {
 /** Mots-clés de repli pour les colonnes peu ambiguës (« Téléphone du client », « Date d'échéance de paiement »). */
 const MOTS_CLES: Partial<Record<Colonne, (s: string) => boolean>> = {
   echeance: (s) => s.includes("echeance"),
+  dateFacture: (s) => s.includes("emission") || s.includes("datefacture") || s.includes("datedefacture"),
   telephone: (s) => s.includes("whatsapp") || s.includes("telephone") || s.startsWith("tel"),
   email: (s) => s.includes("mail") || s.includes("courriel"),
 };

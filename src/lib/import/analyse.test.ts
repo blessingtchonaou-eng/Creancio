@@ -8,6 +8,7 @@ const ligne = (n: number, surcharge: Partial<LigneBrute> = {}): LigneBrute => ({
   client: "Kofi Agbo",
   telephone: "90 12 34 56",
   montant: "150 000",
+  dateFacture: "",
   echeance: "25/10/2026",
   email: "",
   ...surcharge,
@@ -165,5 +166,32 @@ describe("résumé", () => {
   it("écrit le compteur permanent", () => {
     expect(resumerComptes({ pretes: 247, aCorriger: 3, dejaImportees: 0 })).toBe("247 prêtes, 3 à corriger");
     expect(resumerComptes({ pretes: 1, aCorriger: 0, dejaImportees: 12 })).toBe("1 prête, 0 à corriger, 12 déjà importées");
+  });
+});
+
+describe("date de facture", () => {
+  const ctx: ContexteAnalyse = { clients: [], numerosExistants: new Set(), aujourdhui: "2026-09-20" };
+  const un = (surcharge: Partial<LigneBrute>) => analyserLignes([ligne(1, surcharge)], ctx).lignes[0];
+
+  it("est lue quand elle est fournie", () => {
+    expect(un({ dateFacture: "01/09/2026" })).toMatchObject({ statut: "prete", dateFacture: "2026-09-01", dateFactureParDefaut: false });
+  });
+  it("retombe sur la date du jour quand elle est vide, en le signalant", () => {
+    expect(un({ dateFacture: "  " })).toMatchObject({ statut: "prete", dateFacture: "2026-09-20", dateFactureParDefaut: true });
+  });
+  it("est une erreur visible quand elle est illisible (jamais remplacée par le jour)", () => {
+    const l = un({ dateFacture: "début septembre" });
+    expect(l.statut).toBe("erreur");
+    expect(l.erreurs.dateFacture).toBeTruthy();
+    expect(l.dateFacture).toBeUndefined();
+  });
+  it("refuse une date qui n'existe pas", () => {
+    expect(un({ dateFacture: "31/02/2026" }).erreurs.dateFacture).toMatch(/n'existe pas/i);
+  });
+  it("refuse une échéance avant la date de facture", () => {
+    expect(un({ dateFacture: "01/11/2026", echeance: "25/10/2026" })).toMatchObject({ statut: "erreur", erreurs: { echeance: expect.stringMatching(/avant la date de facture/) } });
+  });
+  it("accepte une échéance passée quand la date de facture est celle du jour par défaut", () => {
+    expect(un({ echeance: "15/07/2026" }).statut).toBe("prete");
   });
 });

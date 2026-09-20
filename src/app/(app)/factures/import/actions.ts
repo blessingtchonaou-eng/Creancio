@@ -49,6 +49,7 @@ const ligneSchema = z.object({
   client: texte(300),
   telephone: texte(100),
   montant: texte(100),
+  dateFacture: texte(100),
   echeance: texte(100),
   email: texte(300),
 });
