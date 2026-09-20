@@ -1,11 +1,22 @@
 import "dotenv/config";
+import { hashPassword } from "better-auth/crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, StatutFacture, Operateur } from "../src/generated/prisma/client";
+
+if (process.env.NODE_ENV === "production") throw new Error("Le seed de démonstration ne s'exécute jamais en production.");
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 export const DEMO_ENTREPRISE_ID = "demo-entreprise";
 const AUTRE_ENTREPRISE_ID = "demo-autre-entreprise"; // sert aux tests d'isolation
+
+// Comptes de démonstration (développement local uniquement). Mot de passe : DEMO_PASSWORD, sinon la valeur ci-dessous.
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "creancio-demo-2026";
+const DEMO_USERS = [
+  { id: "demo-admin", nom: "Kossi Mensah", email: "demo@creancio.tg", role: "ADMIN", entrepriseId: DEMO_ENTREPRISE_ID },
+  { id: "demo-collaboratrice", nom: "Ama Doe", email: "collaboratrice@creancio.tg", role: "COLLABORATEUR", entrepriseId: DEMO_ENTREPRISE_ID },
+  { id: "demo-autre-admin", nom: "Yao Agbo", email: "autre@creancio.tg", role: "ADMIN", entrepriseId: AUTRE_ENTREPRISE_ID },
+] as const;
 
 const DAY = 86_400_000;
 const today = new Date();
@@ -52,6 +63,7 @@ const FACTURES: Ligne[] = [
 ];
 
 async function main() {
+  await db.utilisateur.deleteMany({ where: { email: { in: DEMO_USERS.map((u) => u.email) } } });
   // Repartir de zéro : les factures d'abord (le client est protégé par la clé étrangère).
   await db.facture.deleteMany({ where: { entrepriseId: { in: [DEMO_ENTREPRISE_ID, AUTRE_ENTREPRISE_ID] } } });
   await db.entreprise.deleteMany({ where: { id: { in: [DEMO_ENTREPRISE_ID, AUTRE_ENTREPRISE_ID] } } });
@@ -108,7 +120,22 @@ async function main() {
     });
   }
 
-  console.log(`Seed terminé : 2 entreprises, ${clients.length + 1} clients, ${FACTURES.length + 2} factures.`);
+  const motDePasse = await hashPassword(DEMO_PASSWORD);
+  for (const u of DEMO_USERS) {
+    await db.utilisateur.create({
+      data: {
+        id: u.id,
+        nom: u.nom,
+        email: u.email,
+        role: u.role,
+        entrepriseId: u.entrepriseId,
+        emailVerified: true,
+        comptes: { create: { accountId: u.id, providerId: "credential", password: motDePasse } },
+      },
+    });
+  }
+
+  console.log(`Seed terminé : 2 entreprises, ${clients.length + 1} clients, ${FACTURES.length + 2} factures, ${DEMO_USERS.length} utilisateurs.`);
 }
 
 main()

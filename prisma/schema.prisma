@@ -56,15 +56,68 @@ model Entreprise {
   scenarios     ScenarioRelance[]
 }
 
+// Utilisateur, Session, Compte et Verification sont les tables de Better Auth.
+// entrepriseId reste vide tant que l'onboarding (étape 1) n'est pas terminé.
 model Utilisateur {
-  id           String     @id @default(cuid())
-  entrepriseId String
-  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
-  nom          String
-  email        String     @unique
-  motDePasse   String // haché
-  role         Role       @default(COLLABORATEUR)
-  createdAt    DateTime   @default(now())
+  id            String      @id @default(cuid())
+  entrepriseId  String?
+  entreprise    Entreprise? @relation(fields: [entrepriseId], references: [id], onDelete: SetNull)
+  nom           String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  role          Role        @default(COLLABORATEUR)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  comptes       Compte[]
+
+  @@index([entrepriseId])
+}
+
+model Session {
+  id        String      @id @default(cuid())
+  userId    String
+  user      Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String      @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+// Le mot de passe haché (scrypt) est stocké ici, jamais en clair.
+model Compte {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Client {

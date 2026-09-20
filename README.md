@@ -36,6 +36,21 @@ src/
 prisma/schema.prisma         modèle de données du cahier des charges
 ```
 
+## Authentification
+
+Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie httpOnly. Pages `/inscription` et `/connexion`.
+
+- `src/proxy.ts` : contrôle rapide (cookie présent) pour les visiteurs anonymes.
+- `src/lib/session.ts` : le vrai contrôle. `requireEntreprise()` renvoie `entrepriseId` et le rôle depuis la session ;
+  **toute page et toute action qui lit ou écrit des données doit l'appeler et filtrer par cet `entrepriseId`**.
+  Un `entrepriseId` ne vient jamais du navigateur.
+- Sans entreprise, tout écran `(app)` redirige vers `/bienvenue`. Celui qui crée l'entreprise en devient ADMIN.
+- Comptes de démonstration (seed, développement uniquement) : `demo@creancio.tg` (ADMIN), `collaboratrice@creancio.tg`
+  (COLLABORATEUR), `autre@creancio.tg` (ADMIN d'une autre entreprise, pour les tests d'isolation).
+  Mot de passe : variable `DEMO_PASSWORD`, sinon la valeur par défaut de `prisma/seed.ts`.
+
+Tests : `npm test` (Vitest). Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant.
+
 ## Conventions
 
 - Montants en FCFA stockés en entiers ; affichage avec `formatFCFA()` / `formatAmount()`.
@@ -69,8 +84,14 @@ npm run db:migrate        # crée les tables
 npm run db:seed           # entreprise de démonstration
 ```
 
-`DATABASE_URL` pointe sur la base `creancio_dev`, avec son propre rôle. Si votre volume Docker `creancio-data`
-existe déjà, créez-les une fois :
+Le serveur PostgreSQL contient deux bases :
+
+| Base | Rôle |
+|---|---|
+| `creancio` | **Ancien jeu de démonstration** (60 clients, 250 factures, 200 paiements, 180 relances) issu de la première version. **À ne pas modifier ni migrer.** Il servira à tester l'import sur un volume réaliste et à un futur seed de démo plus riche. |
+| `creancio_dev` | **Développement** : c'est la base visée par `DATABASE_URL` (rôle `creancio_dev`). Migrations et seed s'appliquent ici uniquement. |
+
+Si votre volume Docker `creancio-data` existe déjà, créez la base de développement une fois :
 
 ```bash
 docker compose exec db psql -U creancio -d postgres -c "CREATE ROLE creancio_dev LOGIN PASSWORD 'motdepasse' CREATEDB" -c "CREATE DATABASE creancio_dev OWNER creancio_dev"

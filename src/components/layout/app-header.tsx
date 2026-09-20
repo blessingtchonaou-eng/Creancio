@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Upload } from "lucide-react";
+import { LogOut, Upload } from "lucide-react";
+import { deconnexion } from "@/app/(auth)/actions";
 import { cn } from "@/lib/cn";
 import { Logo } from "./logo";
 import { NAV_ITEMS } from "./nav-items";
 
-export function AppHeader() {
+function initials(name: string) {
+  return name.split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+}
+
+export function AppHeader({ userName, companyName }: { userName: string; companyName: string }) {
   const pathname = usePathname();
   return (
     <header className="flex items-center justify-between gap-4">
@@ -42,9 +47,23 @@ export function AppHeader() {
           <Upload className="size-4" aria-hidden />
           <span className="sr-only sm:not-sr-only">Importer des factures</span>
         </Link>
-        <span className="flex size-10 items-center justify-center rounded-full bg-success text-body-sm font-semibold text-on-primary" aria-label="Compte de James">
-          JA
+        <span
+          className="flex size-10 items-center justify-center rounded-full bg-success text-body-sm font-semibold text-on-primary"
+          title={`${userName} · ${companyName}`}
+          aria-label={`Connecté : ${userName}, ${companyName}`}
+        >
+          {initials(userName)}
         </span>
+        <form action={deconnexion}>
+          <button
+            type="submit"
+            aria-label="Se déconnecter"
+            title="Se déconnecter"
+            className="flex size-11 items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted hover:text-ink"
+          >
+            <LogOut className="size-5" aria-hidden />
+          </button>
+        </form>
       </div>
     </header>
   );

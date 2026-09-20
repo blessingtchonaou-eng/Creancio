@@ -6,19 +6,21 @@ import { PriorityInvoices } from "@/components/dashboard/priority-invoices";
 import { ReminderEfficiency } from "@/components/dashboard/reminder-efficiency";
 import { ActiveScenario } from "@/components/dashboard/active-scenario";
 import { formatFCFA } from "@/lib/format";
+import { requireEntreprise } from "@/lib/session";
 import { ACTIVE_SCENARIO, INVOICES, KPIS, OUTSTANDING_TOTAL, REMINDER_RESULTS } from "@/lib/mock-data";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 export const dynamic = "force-dynamic"; // date du jour à chaque visite
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { user } = await requireEntreprise();
   const today = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date());
 
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-body-sm text-ink-muted">Bonjour James, nous sommes {today}</p>
+          <p className="text-body-sm text-ink-muted">Bonjour {user.name.split(" ")[0]}, nous sommes {today}</p>
           <h1 className="mt-1 font-display text-[2rem] leading-tight font-medium tracking-tight sm:text-display">
             Vous attendez <span className="tabular whitespace-nowrap text-primary">{formatFCFA(OUTSTANDING_TOTAL)}</span>
           </h1>
