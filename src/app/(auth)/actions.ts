@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
+import { appelerRoute } from "@/lib/auth-route";
 import { fieldErrorsFrom, stringValues, type FormState } from "@/lib/form-state";
-import { signInSchema, signUpSchema } from "@/lib/validation/auth";
+import { requireUser } from "@/lib/session";
+import { demandeReinitialisationSchema, nouveauMotDePasseSchema, signInSchema, signUpSchema } from "@/lib/validation/auth";
 
 const TROP_DE_TENTATIVES = "Trop d'essais. Attendez une minute, puis réessayez.";
 
@@ -23,7 +25,7 @@ export async function inscription(_prev: FormState, formData: FormData): Promise
 
   try {
     await auth.api.signUpEmail({
-      body: { name: parsed.data.nom, email: parsed.data.email, password: parsed.data.password },
+      body: { name: parsed.data.nom, email: parsed.data.email, password: parsed.data.password, callbackURL: "/tableau-de-bord" },
       headers: await headers(),
     });
   } catch (e) {
@@ -63,4 +65,47 @@ export async function connexion(_prev: FormState, formData: FormData): Promise<F
 export async function deconnexion() {
   await auth.api.signOut({ headers: await headers() });
   redirect("/connexion");
+}
+
+// --- Mot de passe oublié ---------------------------------------------------------------------------------------------
+
+/** Même phrase que le compte existe ou non : on ne révèle pas qui a un compte. */
+const MESSAGE_LIEN_ENVOYE = "Si un compte existe avec cette adresse, un e-mail vient de partir.";
+
+export async function demanderReinitialisation(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = stringValues(formData);
+  const parsed = demandeReinitialisationSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues), values };
+
+  // Par le routeur : la limite de débit de la route publique s'applique aussi ici.
+  const r = await appelerRoute("/request-password-reset", { email: parsed.data.email, redirectTo: "/nouveau-mot-de-passe" });
+  if (r.status === 429) return { error: TROP_DE_TENTATIVES, values };
+  if (r.status >= 500) return { error: "La demande n'a pas pu être envoyée. Réessayez dans un instant.", values };
+  return { success: MESSAGE_LIEN_ENVOYE, values };
+}
+
+export async function reinitialiserMotDePasse(_prev: FormState, formData: FormData): Promise<FormState> {
+  const parsed = nouveauMotDePasseSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    const fieldErrors = fieldErrorsFrom(parsed.error.issues);
+    // Un jeton absent est un lien cassé, pas une faute de saisie.
+    if (fieldErrors.token) redirect("/nouveau-mot-de-passe?error=INVALID_TOKEN");
+    return { fieldErrors };
+  }
+  const r = await appelerRoute("/reset-password", { newPassword: parsed.data.password, token: parsed.data.token });
+  if (r.status === 429) return { error: TROP_DE_TENTATIVES };
+  if (r.status === 200) redirect("/connexion?message=mot-de-passe-modifie");
+  // Lien expiré, déjà utilisé ou inventé : la page dit quoi faire.
+  redirect("/nouveau-mot-de-passe?error=INVALID_TOKEN");
+}
+
+// --- Confirmation de l'adresse e-mail ---------------------------------------------------------------------------------
+
+export async function renvoyerVerification(): Promise<FormState> {
+  const user = await requireUser();
+  if (user.emailVerified) return { success: "Votre adresse e-mail est déjà confirmée." };
+  const r = await appelerRoute("/send-verification-email", { email: user.email, callbackURL: "/tableau-de-bord" });
+  if (r.status === 429) return { error: TROP_DE_TENTATIVES };
+  if (!r.ok) return { error: "L'e-mail n'a pas pu être envoyé. Réessayez dans un instant." };
+  return { success: `E-mail envoyé à ${user.email}. Pensez à regarder dans vos courriers indésirables.` };
 }

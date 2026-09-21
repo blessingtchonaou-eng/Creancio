@@ -8,6 +8,7 @@ export default defineConfig({
     environment: "node",
     include: ["tests/http/**/*.test.ts"],
     setupFiles: ["dotenv/config"],
+    globalSetup: ["tests/http/prechauffage.ts"],
     fileParallelism: false,
     testTimeout: 60_000,
     hookTimeout: 60_000,

@@ -46,7 +46,7 @@ combien on lui doit et qui est en retard**. Les relances automatiques et le paie
 | ~~Fiche d'une facture~~ | Au tag `s3-s4-complete`, il n'y avait pas de page par facture. **Faite après le tag** : `/factures/[id]` (détail, historique des paiements, modification, suspension, annulation). | fait |
 | Passage automatique « À venir » → « Échue » en base | Corrigé à l'affichage, pas encore écrit en base (viendra avec le planificateur de relances). | S7–S8 |
 | Export Excel | Absent. | S9–S10 |
-| Vérification d'e-mail, mot de passe oublié | Absents : un compte ne peut pas récupérer son mot de passe. | avant la mise en production |
+| ~~Vérification d'e-mail, mot de passe oublié~~ | Au tag `s3-s4-complete`, un compte ne pouvait pas récupérer son mot de passe. **Fait après le tag** (code et tests) ; l'envoi réel d'e-mails attend le domaine. | envoi réel : avant la mise en production |
 | Inviter des collaborateurs | Les rôles (administrateur, collaborateur) existent mais un collaborateur ne peut être créé que par les données de démonstration. | avant la mise en production |
 | Application installable et vraiment hors connexion (PWA) | La saisie hors connexion ne marche que si la page était déjà ouverte au moment où le réseau tombe. | avant la mise en production |
 | Déclaration IPDCP, politique de confidentialité | Non faites. | avant la mise en production |

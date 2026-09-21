@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { connexion } from "@/app/(auth)/actions";
 import { Field } from "@/components/ui/field";
@@ -25,6 +26,9 @@ export function SignInForm({ suite }: { suite?: string }) {
         error={err.email}
       />
       <PasswordField label="Mot de passe" name="password" autoComplete="current-password" error={err.password} />
+      <Link href="/mot-de-passe-oublie" className="-mt-2 inline-flex min-h-11 items-center self-start font-semibold text-primary underline underline-offset-2">
+        Mot de passe oublié ?
+      </Link>
       <SubmitButton size="lg">Me connecter</SubmitButton>
     </form>
   );

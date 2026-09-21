@@ -51,7 +51,22 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   (COLLABORATEUR), `autre@creancio.tg` (ADMIN d'une autre entreprise, pour les tests d'isolation).
   Mot de passe : variable `DEMO_PASSWORD`, sinon la valeur par défaut de `prisma/seed.ts`.
 
-Tests : `npm test` (Vitest). `npm run test:http` vérifie, sur un serveur qui tourne (`npm run dev`), les codes HTTP et l'isolation entre entreprises. Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant.
+### Mot de passe oublié et confirmation d'adresse
+
+- Pages `/mot-de-passe-oublie` (demande) et `/nouveau-mot-de-passe` (lien reçu par e-mail). La demande répond toujours « Si un compte existe avec cette adresse… ».
+- Lien à usage unique, valable 1 heure ; le mot de passe changé, **toutes les sessions sont fermées** et un e-mail de notification part.
+  Le lien du mail ne fait que vérifier le jeton : seul l'envoi du formulaire le consomme (un aperçu de messagerie ne le brûle pas).
+- Limites : 3 demandes par minute et par IP (routeur Better Auth) ET **3 liens par heure et par adresse**, appliquée dans le rappel `sendResetPassword`
+  (`src/lib/auth-courriels.ts`), donc aussi pour un appel direct de `/api/auth/request-password-reset`. Au-delà, le jeton est retiré et rien n'est envoyé.
+- Les actions serveur passent par `appelerRoute` (`src/lib/auth-route.ts`) pour que la limite par IP s'applique aussi à elles.
+- Confirmation d'adresse : e-mail à l'inscription, bandeau dans l'application tant qu'elle n'est pas confirmée (accès non bloqué).
+  Seule exception : l'administration de la plateforme exige une adresse listée dans `ADMIN_PLATEFORME_EMAILS` **et** confirmée (`requireAdminPlateforme()`).
+- **E-mails** (`src/lib/email/`) : `EMAIL_DRIVER` = `console` (défaut : l'e-mail et son lien s'affichent dans le terminal du serveur) ou `mailpit`
+  (`docker compose up -d mailpit`, boîte sur http://localhost:8025). **Hors production, aucun e-mail ne part pour de vrai**, même avec une clé Resend ou Brevo.
+  En production : `resend` (ou `brevo`), avec sa clé et `EMAIL_FROM` ; sans eux, le processus s'arrête avec le code 1 et un message clair (`src/instrumentation.ts`), donc le déploiement échoue au lieu de servir des pages en erreur. En développement, l'erreur s'affiche dans le navigateur et le serveur reste en vie.
+  Pour essayer un build de production en local, il faut donc définir ces variables (ou lancer `npm run dev`).
+
+Tests : `npm test` (Vitest). `npm run test:http` vérifie, sur un serveur qui tourne (`npm run dev`), les codes HTTP et l'isolation entre entreprises. Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant. Lancez les suites HTTP une par une (`npx vitest run --config vitest.http.config.mts tests/http/<suite>.test.ts`) : la connexion est limitée à 5 par minute et par IP. Un préchauffage (`tests/http/prechauffage.ts`, une connexion) visite chaque page avant la suite pour que la compilation à froid du serveur de développement ne fasse pas dépasser les délais.
 
 ## Sécurité
 

@@ -2,10 +2,32 @@
 
 Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque étape.
 
+## Bloquant avant mise en ligne
+- [ ] **Limiteur de débit en base.** Better Auth le garde en mémoire : remis à zéro à chaque redémarrage, non partagé entre instances.
+      Passer `rateLimit.storage` à « database » (nouveau modèle Prisma).
+- [ ] **Les actions serveur de connexion et d'inscription contournent la limite de débit.** `auth.api.signInEmail()` (appel direct) n'applique pas la limite
+      « 5 par minute » de la route `/api/auth/sign-in/email` : elle vit dans le routeur. Faire passer `connexion` et `inscription` par `appelerRoute`
+      (`src/lib/auth-route.ts`, déjà utilisé pour le mot de passe oublié), et tester par un envoi direct de l'action.
+- [ ] **Envoi réel d'e-mails.** Domaine à acheter, SPF, DKIM et DMARC à publier chez Resend (ou Brevo), clé `RESEND_API_KEY` et `EMAIL_FROM` dans les variables
+      d'environnement. Sans elles, le démarrage en production échoue (`src/instrumentation.ts` : message clair, le processus s'arrête avec le code 1). Un essai réel de bout en bout reste à faire.
+- [ ] **Envoi d'e-mail en arrière-plan.** L'envoi n'est pas attendu (pour que la durée de la réponse ne trahisse pas l'existence du compte).
+      Sur un hébergement sans processus durable (serverless), le brancher sur `advanced.backgroundTasks` (`waitUntil`), sinon des e-mails peuvent se perdre.
+- [ ] **Adresse IP derrière un proxy.** La limite de débit lit `x-forwarded-for` : n'accepter cet en-tête que de l'hébergeur (sinon un client peut changer d'IP à volonté).
+- [ ] **Import de « Montant payé »** (voir « Étape 5 »).
+- [ ] **Administration de la plateforme (`/admin/pilote`, export).** Chaque page, action et route d'export doit appeler `requireAdminPlateforme()` (`src/lib/session.ts`) :
+      adresse dans `ADMIN_PLATEFORME_EMAILS` ET confirmée, sinon 404. Le refus est testé en unitaire ; ajouter les tests HTTP « non vérifié → 404 » quand ces pages existent.
+
 ## Authentification
-- [ ] Vérification d'e-mail et réinitialisation du mot de passe. Choisir un service d'envoi (Resend ou Brevo).
-- [ ] Rendre neutre le message d'inscription « Un compte existe déjà avec cet e-mail » (une fois l'envoi d'e-mails en place).
-- [ ] Invitation de collaborateurs dans une entreprise (aujourd'hui, un COLLABORATEUR n'existe que par le seed).
+- [ ] Rendre la vérification d'e-mail **bloquante** avant le pilote (aujourd'hui : bandeau seulement, l'accès reste ouvert).
+- [ ] **Fuite connue.** L'inscription répond « Un compte existe déjà avec cet e-mail » : on peut savoir si une adresse a un compte. Choix fait pour la clarté (gérants peu habitués aux logiciels) ;
+      la réinitialisation, elle, répond toujours pareil.
+- [ ] Jeton de réinitialisation stocké non haché dans la table `Verification` (Better Auth sait le hacher : `verification.storeIdentifier`). Si activé, `autoriserLien`
+      (`src/lib/reinitialisation.ts`) ne pourra plus compter par préfixe d'identifiant : prévoir un autre moyen de compter.
+- [ ] Journal d'audit (qui a débloqué, annulé, modifié quoi), aujourd'hui inexistant.
+- [ ] **Invitation de collaborateurs** et page `/equipe`, reportées ensemble. Elles apporteront l'action « Envoyer un lien de réinitialisation à un membre »
+      (ADMIN seulement, membre cherché par `entrepriseId` de la session, lien envoyé à l'adresse du membre, jamais montré à l'ADMIN). Aujourd'hui un COLLABORATEUR
+      n'existe que par le seed ; il peut utiliser « Mot de passe oublié ? » comme tout le monde.
+- [ ] Limite « 3 e-mails de confirmation par heure » : registre tenu dans la table `Verification` (`limite-verification:…`), à purger régulièrement.
 
 ## Application
 - [ ] Service worker PWA complet (mode hors-ligne allégé en attendant : file d'attente locale).

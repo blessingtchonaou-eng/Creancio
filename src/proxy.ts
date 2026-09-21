@@ -6,7 +6,7 @@ import { getSessionCookie } from "better-auth/cookies";
 // requireEntreprise() dans chaque page et chaque action. On ne renvoie jamais un visiteur connecté loin de
 // /connexion ici : un cookie périmé provoquerait une boucle de redirections. Les pages /connexion et
 // /inscription le font elles-mêmes, après lecture de la vraie session.
-const PUBLIC_PREFIXES = ["/connexion", "/inscription", "/api/auth"];
+const PUBLIC_PREFIXES = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/nouveau-mot-de-passe", "/api/auth"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

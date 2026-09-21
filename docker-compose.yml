@@ -15,5 +15,12 @@ services:
       test: ["CMD-SHELL", "pg_isready -U creancio"]
       interval: 5s
       retries: 10
+  # Boîte de réception locale pour les e-mails de développement : docker compose up -d mailpit
+  # (EMAIL_DRIVER="mailpit" ; lecture sur http://localhost:8025). Rien n'est envoyé sur Internet.
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
 volumes:
   creancio-data:
