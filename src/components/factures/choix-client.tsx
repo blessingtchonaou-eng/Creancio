@@ -21,6 +21,8 @@ interface Props {
   valeur: ClientChoisi;
   onChange: (valeur: ClientChoisi) => void;
   erreurs: { client?: string; nom?: string; whatsapp?: string };
+  /** Proposer « Créer un nouveau client » (vrai par défaut). Faux pour changer le client d'une facture qui existe déjà. */
+  creation?: boolean;
 }
 
 const MAX_RESULTATS = 5;
@@ -32,7 +34,7 @@ function nouveauDepuis(texte: string): ClientChoisi {
 }
 
 /** Cherche parmi les clients de l'entreprise (déjà chargés : ça marche sans connexion) ou crée un client sans quitter la saisie. */
-export function ChoixClient({ clients, valeur, onChange, erreurs }: Props) {
+export function ChoixClient({ clients, valeur, onChange, erreurs, creation = true }: Props) {
   const [requete, setRequete] = useState("");
 
   const resultats = useMemo(() => {
@@ -111,18 +113,20 @@ export function ChoixClient({ clients, valeur, onChange, erreurs }: Props) {
             </button>
           </li>
         ))}
-        <li>
-          <button
-            type="button"
-            onClick={() => onChange(nouveauDepuis(nom))}
-            className="flex min-h-12 w-full items-center gap-2 px-3.5 py-2 text-left font-semibold text-primary hover:bg-surface-muted"
-          >
-            <Plus className="size-4 shrink-0" aria-hidden />
-            {nom === "" ? "Créer un nouveau client" : `Créer « ${nom} »`}
-          </button>
-        </li>
+        {creation && (
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange(nouveauDepuis(nom))}
+              className="flex min-h-12 w-full items-center gap-2 px-3.5 py-2 text-left font-semibold text-primary hover:bg-surface-muted"
+            >
+              <Plus className="size-4 shrink-0" aria-hidden />
+              {nom === "" ? "Créer un nouveau client" : `Créer « ${nom} »`}
+            </button>
+          </li>
+        )}
       </ul>
-      {resultats.length === 0 && nom !== "" && <p className="text-body-sm text-ink-muted">Aucun client ne correspond. Créez-le ci-dessus.</p>}
+      {resultats.length === 0 && nom !== "" && <p className="text-body-sm text-ink-muted">{creation ? "Aucun client ne correspond. Créez-le ci-dessus." : "Aucun client ne correspond."}</p>}
       {erreurs.client && (
         <p role="alert" className="text-body-sm text-danger">
           {erreurs.client}

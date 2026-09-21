@@ -46,8 +46,9 @@ export async function chargerTableauDeBord(entrepriseId: string, aujourdhui: str
     db.facture.count({ where: { entrepriseId } }),
     db.facture.aggregate({ where: dues, _sum: { montant: true, montantPaye: true }, _count: { _all: true } }),
     db.facture.aggregate({ where: { ...dues, echeance: { lt: jour } }, _sum: { montant: true, montantPaye: true }, _count: { _all: true } }),
-    db.paiement.aggregate({ where: { facture: { entrepriseId }, payeLe: { gte: debut, lt: fin } }, _sum: { montant: true } }),
-    db.paiement.aggregate({ where: { facture: { entrepriseId }, payeLe: { gte: debutPrecedent, lt: debut } }, _sum: { montant: true }, _count: { _all: true } }),
+    // Un paiement annulé ne compte jamais (annuleLe: null) : il reste dans l'historique de la facture, pas dans les chiffres.
+    db.paiement.aggregate({ where: { facture: { entrepriseId }, annuleLe: null, payeLe: { gte: debut, lt: fin } }, _sum: { montant: true } }),
+    db.paiement.aggregate({ where: { facture: { entrepriseId }, annuleLe: null, payeLe: { gte: debutPrecedent, lt: debut } }, _sum: { montant: true }, _count: { _all: true } }),
     // Délai = dernier paiement moins date d'émission, pour les factures soldées dont la date d'émission est connue.
     // Une valeur négative (payée avant d'être émise) est une erreur de saisie : elle n'entre pas dans la moyenne.
     db.$queryRaw<{ nb: number; moyenne: number | null }[]>`
@@ -55,12 +56,12 @@ export async function chargerTableauDeBord(entrepriseId: string, aujourdhui: str
       FROM (
         SELECT (MAX(p."payeLe")::date - f."dateFacture") AS jours
         FROM "Facture" f
-        JOIN "Paiement" p ON p."factureId" = f."id"
+        JOIN "Paiement" p ON p."factureId" = f."id" AND p."annuleLe" IS NULL
         WHERE f."entrepriseId" = ${entrepriseId} AND f."statut" = 'PAYEE' AND f."dateFactureEstimee" = false
         GROUP BY f."id"
       ) AS delais
       WHERE jours >= 0`,
-    db.facture.count({ where: { entrepriseId, statut: "PAYEE", dateFactureEstimee: true, paiements: { some: {} } } }),
+    db.facture.count({ where: { entrepriseId, statut: "PAYEE", dateFactureEstimee: true, paiements: { some: { annuleLe: null } } } }),
     db.facture.findMany({
       where: dues,
       orderBy: [{ echeance: "asc" }, { numero: "asc" }, { id: "asc" }],

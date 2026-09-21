@@ -27,6 +27,8 @@ enum StatutFacture {
 enum Operateur {
   FLOOZ
   MIXX
+  ESPECES
+  VIREMENT
 }
 
 enum Canal {
@@ -73,6 +75,7 @@ model Utilisateur {
   updatedAt     DateTime    @updatedAt
   sessions      Session[]
   comptes       Compte[]
+  paiementsAnnules Paiement[]
 
   @@index([entrepriseId])
 }
@@ -168,9 +171,19 @@ model Paiement {
   facture     Facture   @relation(fields: [factureId], references: [id], onDelete: Cascade)
   montant     Int
   operateur   Operateur
-  referenceTx String    @unique // référence PayGate : empêche un double traitement
+  referenceTx String    @unique // référence PayGate : empêche un double traitement (paiement manuel : MANUEL-<identifiant du formulaire>)
   payeLe      DateTime
   createdAt   DateTime  @default(now())
+  // Paiement saisi à la main (espèces, virement, Mobile Money hors PayGate) : seul celui-là peut être annulé depuis l'interface.
+  manuel      Boolean   @default(false)
+  reference   String? // référence saisie à la main, facultative
+  // On n'efface jamais un paiement : on l'annule en gardant la trace (qui, quand, pourquoi).
+  annuleLe        DateTime?
+  annuleParId     String?
+  annulePar       Utilisateur? @relation(fields: [annuleParId], references: [id], onDelete: SetNull)
+  motifAnnulation String? // 3 à 200 caractères, contrôlé par le code
+
+  @@index([annuleParId])
 }
 
 model ScenarioRelance {

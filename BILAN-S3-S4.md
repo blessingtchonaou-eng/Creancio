@@ -42,15 +42,15 @@ combien on lui doit et qui est en retard**. Les relances automatiques et le paie
 |---|---|---|
 | Relances WhatsApp et SMS | Aucun message n'est envoyé. Les cartes « Relances » et « Efficacité » du tableau de bord affichent « Disponible dès les premières relances ». | S7–S8 |
 | Paiement Mobile Money (Flooz, Mixx by Yas) via PayGate | Pas de lien de paiement ; aucun paiement ne s'enregistre tout seul. Les chiffres « Encaissé » et « Délai moyen » restent à zéro tant qu'il n'y a pas de paiement. | S5–S6 |
-| Marquer une facture payée à la main | Impossible pour l'instant. | à décider |
-| Fiche d'une facture | Le nom du client ouvre la fiche du client ; il n'y a pas de page par facture. | à construire |
+| ~~Marquer une facture payée à la main~~ | Au tag `s3-s4-complete`, impossible. **Fait après le tag** : paiement saisi à la main (Flooz, Mixx, espèces, virement), annulable par un administrateur avec un motif. | fait |
+| ~~Fiche d'une facture~~ | Au tag `s3-s4-complete`, il n'y avait pas de page par facture. **Faite après le tag** : `/factures/[id]` (détail, historique des paiements, modification, suspension, annulation). | fait |
 | Passage automatique « À venir » → « Échue » en base | Corrigé à l'affichage, pas encore écrit en base (viendra avec le planificateur de relances). | S7–S8 |
 | Export Excel | Absent. | S9–S10 |
 | Vérification d'e-mail, mot de passe oublié | Absents : un compte ne peut pas récupérer son mot de passe. | avant la mise en production |
 | Inviter des collaborateurs | Les rôles (administrateur, collaborateur) existent mais un collaborateur ne peut être créé que par les données de démonstration. | avant la mise en production |
 | Application installable et vraiment hors connexion (PWA) | La saisie hors connexion ne marche que si la page était déjà ouverte au moment où le réseau tombe. | avant la mise en production |
 | Déclaration IPDCP, politique de confidentialité | Non faites. | avant la mise en production |
-| Import de plus de 1 000 lignes, colonnes « Statut » et « Montant payé » | Non prévus dans l'import actuel. | à planifier |
+| Import de plus de 1 000 lignes, colonnes « Statut » et « Montant payé » | Non prévus dans l'import actuel. « Montant payé » est bloquant avant le pilote (voir TODO). | à planifier |
 
 La liste complète et à jour est dans [TODO-PRODUCTION.md](TODO-PRODUCTION.md).
 

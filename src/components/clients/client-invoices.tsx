@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatAmount, formatDate, formatFCFA, toIsoDate } from "@/lib/format";
+import { resteDu as resteDuFacture } from "@/lib/facture-regles";
 import type { FactureDuClient } from "@/lib/clients";
 
-const resteDu = (f: FactureDuClient) => f.montant - f.montantPaye;
+const resteDu = (f: FactureDuClient) => resteDuFacture(f.statut, f.montant, f.montantPaye);
 
 /** Factures d'un client : cartes sur mobile, tableau à partir de 768 px. */
 export function ClientInvoices({ factures }: { factures: FactureDuClient[] }) {
@@ -10,16 +12,18 @@ export function ClientInvoices({ factures }: { factures: FactureDuClient[] }) {
     <>
       <ul className="flex flex-col gap-2.5 md:hidden">
         {factures.map((f) => (
-          <li key={f.id} className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-4">
+          <li key={f.id} className="relative flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-4 hover:bg-surface-muted">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-semibold">{f.numero}</span>
+              <Link href={`/factures/${f.id}`} className="font-semibold after:absolute after:inset-0">
+                {f.numero}
+              </Link>
               <StatusBadge status={f.statut} />
             </div>
             <div className="flex items-baseline justify-between gap-3 text-body-sm text-ink-muted">
               <span>Échéance {formatDate(toIsoDate(f.echeance))}</span>
               <span className="tabular font-display text-h3 text-ink">{formatFCFA(f.montant)}</span>
             </div>
-            {f.montantPaye > 0 && <p className="text-body-sm text-ink-muted">Reste à payer : {formatFCFA(resteDu(f))}</p>}
+            {f.montantPaye > 0 && resteDu(f) > 0 && <p className="text-body-sm text-ink-muted">Reste à payer : {formatFCFA(resteDu(f))}</p>}
           </li>
         ))}
       </ul>
@@ -38,8 +42,12 @@ export function ClientInvoices({ factures }: { factures: FactureDuClient[] }) {
           </thead>
           <tbody>
             {factures.map((f) => (
-              <tr key={f.id} className="border-t border-border">
-                <td className="px-4 py-3 font-semibold">{f.numero}</td>
+              <tr key={f.id} className="relative border-t border-border hover:bg-surface-muted">
+                <td className="px-4 py-3 font-semibold">
+                  <Link href={`/factures/${f.id}`} className="after:absolute after:inset-0">
+                    {f.numero}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap">{formatDate(toIsoDate(f.echeance))}</td>
                 <td className="tabular px-4 py-3 text-right">{formatAmount(f.montant)}</td>
                 <td className="tabular px-4 py-3 text-right">{formatAmount(resteDu(f))}</td>

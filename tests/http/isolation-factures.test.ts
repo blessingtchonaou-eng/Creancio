@@ -1,4 +1,5 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { db } from "@/lib/db";
 import { anonyme, seConnecter, serveurAccessible } from "./session";
 
 // Isolation entre entreprises, vue depuis le navigateur : /factures et /tableau-de-bord.
@@ -15,6 +16,7 @@ describe("factures et tableau de bord : isolation entre entreprises (HTTP)", () 
     demo = await seConnecter("demo@creancio.tg");
     autre = await seConnecter("autre@creancio.tg");
   });
+  afterAll(() => db.$disconnect());
 
   it("un visiteur anonyme est renvoyé vers la connexion", async () => {
     for (const chemin of ["/factures", "/tableau-de-bord"]) {
@@ -50,6 +52,62 @@ describe("factures et tableau de bord : isolation entre entreprises (HTTP)", () 
     const html = await chezAutre.text();
     expect(html).toContain(CLIENT_AUTRE);
     expect(html).not.toContain("Quincaillerie");
+  });
+
+  describe("fiche d'une facture (/factures/[id])", () => {
+    let factureDemo: { id: string; numero: string };
+    let factureAutre: { id: string; numero: string };
+
+    beforeAll(async () => {
+      factureDemo = await db.facture.findFirstOrThrow({ where: { entrepriseId: "demo-entreprise", numero: "FA-2026-0007" }, select: { id: true, numero: true } });
+      // Même numéro que chez la démo pour les autres factures du seed : on prend celle-ci, propre à l'autre entreprise par son client
+      factureAutre = await db.facture.findFirstOrThrow({ where: { entrepriseId: "demo-autre-entreprise", numero: "FA-2026-0002" }, select: { id: true, numero: true } });
+    });
+
+    it("un visiteur anonyme est renvoyé vers la connexion", async () => {
+      for (const chemin of [`/factures/${factureDemo.id}`, `/factures/${factureDemo.id}/modifier`, `/factures/${factureDemo.id}/paiement`]) {
+        const r = await anonyme(chemin);
+        expect(r.status, chemin).toBe(307);
+        expect(r.headers.get("location"), chemin).toContain("/connexion");
+      }
+    });
+
+    it("l'utilisateur voit la fiche de sa propre facture (200), avec son client", async () => {
+      const r = await demo(`/factures/${factureDemo.id}`);
+      expect(r.status).toBe(200);
+      const html = await r.text();
+      expect(html).toContain(factureDemo.numero);
+      expect(html).toContain("Quincaillerie");
+    });
+
+    it("la fiche, la modification et le paiement d'une facture d'une autre entreprise renvoient un vrai 404, sans fuite", async () => {
+      for (const chemin of [`/factures/${factureAutre.id}`, `/factures/${factureAutre.id}/modifier`, `/factures/${factureAutre.id}/paiement`]) {
+        const r = await demo(chemin);
+        expect(r.status, chemin).toBe(404);
+        const html = await r.text();
+        expect(html, chemin).not.toContain(CLIENT_AUTRE);      }
+    });
+
+    it("la même règle s'applique dans l'autre sens", async () => {
+      expect((await autre(`/factures/${factureDemo.id}`)).status).toBe(404);
+      expect((await autre(`/factures/${factureDemo.id}/paiement`)).status).toBe(404);
+      const r = await autre(`/factures/${factureAutre.id}`);
+      expect(r.status).toBe(200);
+      expect(await r.text()).toContain(CLIENT_AUTRE);
+    });
+
+    it("un identifiant qui n'existe pas renvoie aussi 404", async () => {
+      for (const chemin of ["/factures/identifiant-inexistant", "/factures/identifiant-inexistant/modifier", "/factures/identifiant-inexistant/paiement"]) {
+        expect((await demo(chemin)).status, chemin).toBe(404);
+      }
+    });
+
+    it("les listes renvoient vers la fiche de chaque facture", async () => {
+      const html = await (await demo("/factures")).text();
+      expect(html).toContain(`href="/factures/${factureDemo.id}"`);
+      expect(html).not.toContain(factureAutre.id);
+      expect(await (await demo("/tableau-de-bord")).text()).toContain(`href="/factures/${factureDemo.id}"`);
+    });
   });
 
   it("une recherche trouve une facture payée alors que « À encaisser » est le filtre par défaut, et le dit", async () => {

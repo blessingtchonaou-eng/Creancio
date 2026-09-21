@@ -24,6 +24,9 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 
 ## Étape 5 (import)
 - [ ] Import : ajouter la colonne facultative « Statut » (facture déjà payée) et « Montant payé ».
+      **BLOQUANT AVANT LE PILOTE** pour « Montant payé » : une PME qui migre ses factures a des factures déjà partiellement payées.
+      **À l'import de « Montant payé », il faudra créer les paiements correspondants (`Paiement`, `manuel`) plutôt que poser `montantPaye` directement** :
+      l'invariant « `montantPaye` = somme des paiements non annulés » doit rester vrai (voir « Fiche facture »).
 - [ ] Import de gros volumes (au-delà de 1 000 lignes) : traitement en arrière-plan avec suivi de progression.
 - [ ] Pas de correspondance approximative des noms de clients (« Agbo Kofi » et « Kofi Agbo » sont deux noms) : les cas ambigus passent par « à choisir ».
 - [ ] Contrôle antivirus des fichiers déposés.
@@ -44,10 +47,18 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] Le statut « À venir » → « Échue » n'est pas écrit en base : `statutAffiche()` le corrige à l'affichage. À faire écrire par le planificateur de relances (S7–S8).
 - [ ] « Aujourd'hui » est calculé en UTC (`aujourdhuiIso`, `src/lib/status.ts`), juste parce que le Togo est à UTC+0 toute l'année.
       À revoir si le produit s'ouvre à un pays d'un autre fuseau.
-- [ ] `/factures/[id]` (fiche d'une facture) à construire : la liste renvoie pour l'instant vers la fiche du client.
 - [ ] Index `(entrepriseId, echeance)` sur `Facture` si les volumes grossissent (tri par échéance de la liste).
 - [ ] Tableau de bord : mises en forme « Efficacité des relances » et « Scénario actif » gardées dans `src/components/dashboard/a-venir/`, à brancher avec les relances.
 - [ ] Tableau de bord : pas de sélecteur de période (le chiffre « encaissé » est celui du mois courant).
+
+## Fiche facture (paiements saisis à la main)
+- [ ] Remboursement d'un paiement reçu par PayGate : aucun bouton d'annulation pour eux (seuls les paiements `manuel` s'annulent depuis l'interface).
+- [ ] Rapprochement d'un paiement saisi à la main avec un paiement PayGate reçu plus tard pour la même facture : risque de compter deux fois la même somme.
+- [ ] Corriger le montant ou la date d'un paiement : aujourd'hui, on l'annule (motif obligatoire) et on en saisit un nouveau.
+- [ ] Un collaborateur qui se trompe de montant doit demander à un administrateur d'annuler le paiement (règle voulue : annuler une facture ou un paiement est réservé aux ADMIN).
+      Une entreprise sans administrateur ne pourrait plus rien annuler : à vérifier quand l'invitation de collaborateurs existera.
+- [ ] « Reprendre les relances » redonne « À venir » / « Échue » / « Partiellement payée » d'après l'échéance et les paiements : « En relance » sera rétabli avec les relances.
+- [ ] Les actions de confirmation (suspendre, annuler) demandent JavaScript ; les formulaires (paiement, modification) fonctionnent sans.
 
 ## Données de test
 - [ ] Ancienne base `creancio` (60 clients, 250 factures, 200 paiements, 180 relances) : lecture seule. Prévoir un seed de démo plus riche à partir d'elle.

@@ -105,7 +105,24 @@ Les chiffres sont calculés dans `src/lib/tableau-de-bord.ts`, la liste dans `sr
 - **« Aujourd'hui »** est le jour UTC : juste pour le Togo (UTC+0 toute l'année, pas d'heure d'été).
 - **/factures** : filtre « À encaisser » par défaut, puces de statut (liens, sans JavaScript), tri par échéance, 25 par page.
   **Une recherche (numéro ou client) porte sur toutes les factures**, quel que soit le filtre, et l'écran le dit.
-- La fiche d'une facture (`/factures/[id]`) n'existe pas encore : le nom du client ouvre la fiche du client.
+- Toute la carte (ou la ligne) d'une facture ouvre sa fiche ; le nom du client ouvre la fiche du client.
+
+## Fiche d'une facture (/factures/[id])
+
+Détail (total, déjà payé, reste à payer, dates, jours de retard), historique des paiements, bloc « Relances » (état vide jusqu'aux relances).
+Le code est dans `src/lib/facture-regles.ts` (règles sans base de données : reste dû, validation d'un paiement, statut après chaque changement)
+et `src/lib/factures-fiche.ts` (lecture et écritures). Les actions serveur sont dans `src/app/(app)/factures/[id]/actions.ts`.
+
+- **Actions ouvertes à tout utilisateur** : modifier la facture, enregistrer un paiement reçu à la main (Flooz, Mixx, espèces, virement), suspendre et reprendre les relances.
+- **Réservées aux ADMIN** : annuler une facture, annuler un paiement. Le bouton n'apparaît pas pour un COLLABORATEUR **et** le serveur refuse l'action (le rôle vient de la session, jamais du formulaire).
+- **On n'efface jamais.** Une facture s'annule, un paiement s'annule (motif de 3 à 200 caractères) ; l'un et l'autre restent visibles avec la trace (qui, quand, pourquoi).
+  Une facture ne s'annule que si tous ses paiements sont annulés. Seuls les paiements saisis à la main s'annulent ici ; un paiement PayGate demande un remboursement.
+- **Un paiement ne dépasse jamais le reste à payer**, et sa date n'est ni future ni avant la date de facture (simple avertissement si cette date est estimée).
+  Le statut passe seul à « Partiellement payée » puis « Payée » ; une facture suspendue le reste tant qu'elle n'est pas soldée.
+- **Invariant** : pour toute facture, `montantPaye` = somme des paiements non annulés (0 quand elle n'a aucun paiement). Chaque écriture se fait sous verrou de ligne
+  (`SELECT … FOR UPDATE`) et modifie `montantPaye` par un delta ; deux paiements simultanés ne peuvent pas dépasser le reste dû, un double clic ne crée qu'un paiement.
+  Les paiements annulés sont exclus partout : encaissé du mois, délai moyen, reste dû.
+  Requête de contrôle : `SELECT COUNT(*) FROM "Facture" f WHERE f."montantPaye" <> (SELECT COALESCE(SUM(p.montant), 0) FROM "Paiement" p WHERE p."factureId" = f.id AND p."annuleLe" IS NULL);` (attendu : 0).
 
 ## Conventions
 
