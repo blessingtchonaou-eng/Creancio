@@ -233,3 +233,35 @@ model EvenementWebhook {
 
   @@unique([source, reference])
 }
+
+// Demandes de participation au pilote (formulaire public de la page d'accueil).
+enum StatutDemandePilote {
+  NOUVELLE
+  CONTACTEE
+  INSCRITE
+  ABANDONNEE
+  // Envoi trop rapide ou jeton invalide : enregistré mais masqué par défaut dans /admin/pilote.
+  SUSPECTE
+}
+
+enum FacturesParMois {
+  MOINS_DE_20
+  DE_20_A_100
+  PLUS_DE_100
+}
+
+model DemandePilote {
+  id              String              @id @default(cuid())
+  nomEntreprise   String
+  nomContact      String?
+  whatsapp        String              @unique // format E.164 : un numéro = une demande
+  ville           String              @default("Lomé")
+  facturesParMois FacturesParMois?
+  consentement    Boolean
+  statut          StatutDemandePilote @default(NOUVELLE)
+  note            String? // 500 caractères au plus, contrôlé par le code
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([statut, createdAt])
+}
