@@ -130,6 +130,8 @@ référence de transaction PayGate (paiement traité une seule fois), relance pa
 
 ## État d'avancement
 
+Bilan de fin de périmètre (ce que l'application sait et ne sait pas faire, décisions prises) : [BILAN-S3-S4.md](BILAN-S3-S4.md). Point de retour git : tag `s3-s4-complete`.
+
 **S3–S4 (comptes, entreprise, clients, factures) : étapes 1 à 7 faites.**
 
 | Étape | Contenu | État |
