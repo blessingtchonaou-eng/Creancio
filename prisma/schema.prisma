@@ -265,3 +265,14 @@ model DemandePilote {
 
   @@index([statut, createdAt])
 }
+
+// Compteurs de limite de débit (connexion, inscription, routes d'authentification, formulaire pilote de la page d'accueil).
+// La clé ne contient jamais d'adresse IP ni d'e-mail en clair : seulement leur empreinte HMAC (voir src/lib/limite-debit.ts).
+// Fenêtre fixe : elle s'ouvre au premier passage et le compteur repart à zéro quand elle est passée.
+model LimiteDebit {
+  cle      String   @id
+  compteur Int
+  expireLe DateTime
+
+  @@index([expireLe])
+}

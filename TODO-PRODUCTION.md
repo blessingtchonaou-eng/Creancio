@@ -3,16 +3,17 @@
 Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque étape.
 
 ## Bloquant avant mise en ligne
-- [ ] **Limiteur de débit en base.** Better Auth le garde en mémoire : remis à zéro à chaque redémarrage, non partagé entre instances.
-      Passer `rateLimit.storage` à « database » (nouveau modèle Prisma).
-- [ ] **Les actions serveur de connexion et d'inscription contournent la limite de débit.** `auth.api.signInEmail()` (appel direct) n'applique pas la limite
-      « 5 par minute » de la route `/api/auth/sign-in/email` : elle vit dans le routeur. Faire passer `connexion` et `inscription` par `appelerRoute`
-      (`src/lib/auth-route.ts`, déjà utilisé pour le mot de passe oublié), et tester par un envoi direct de l'action.
+- [x] ~~Limiteur de débit en base~~ : fait (table `LimiteDebit`, `customStorage` de Better Auth dans `src/lib/auth.ts`).
+- [x] ~~Actions de connexion et d'inscription hors limite~~ : fait. Limites sur les ÉCHECS (`src/lib/limites-auth.ts`) : 20 par IP / 15 min, 10 par couple IP + adresse / 15 min, 50 par adresse / heure.
+- [ ] **Inscription : seuls les échecs sont limités.** Créer des comptes avec des adresses toutes valides n'est pas freiné par les actions (seule la route `/api/auth/sign-up/email`
+      garde sa limite de 5 par minute et par IP). À trancher avant la landing : limite sur les créations réussies (par IP, par heure) et confirmation d'adresse avant tout envoi de relance.
 - [ ] **Envoi réel d'e-mails.** Domaine à acheter, SPF, DKIM et DMARC à publier chez Resend (ou Brevo), clé `RESEND_API_KEY` et `EMAIL_FROM` dans les variables
       d'environnement. Sans elles, le démarrage en production échoue (`src/instrumentation.ts` : message clair, le processus s'arrête avec le code 1). Un essai réel de bout en bout reste à faire.
 - [ ] **Envoi d'e-mail en arrière-plan.** L'envoi n'est pas attendu (pour que la durée de la réponse ne trahisse pas l'existence du compte).
       Sur un hébergement sans processus durable (serverless), le brancher sur `advanced.backgroundTasks` (`waitUntil`), sinon des e-mails peuvent se perdre.
-- [ ] **Adresse IP derrière un proxy.** La limite de débit lit `x-forwarded-for` : n'accepter cet en-tête que de l'hébergeur (sinon un client peut changer d'IP à volonté).
+- [ ] **Configurer l'adresse IP selon l'hébergeur.** `CLIENT_IP_HEADER` et `TRUSTED_PROXY_COUNT` sont obligatoires en production (contrôle au démarrage). À vérifier sur l'installation réelle
+      (VPS : nginx/Caddy avec `X-Forwarded-For $proxy_add_x_forwarded_for`, 1 proxy ; Vercel : 1 proxy ; Cloudflare devant nginx : 2), en envoyant un `x-forwarded-for` falsifié
+      et en contrôlant l'adresse retenue. Sans en-tête lisible, tous les visiteurs partagent un même compteur (« ip-inconnue » ; côté Better Auth : « no-trusted-ip »).
 - [ ] **Import de « Montant payé »** (voir « Étape 5 »).
 - [ ] **Administration de la plateforme (`/admin/pilote`, export).** Chaque page, action et route d'export doit appeler `requireAdminPlateforme()` (`src/lib/session.ts`) :
       adresse dans `ADMIN_PLATEFORME_EMAILS` ET confirmée, sinon 404. Le refus est testé en unitaire ; ajouter les tests HTTP « non vérifié → 404 » quand ces pages existent.

@@ -4,6 +4,8 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "@/lib/db";
 import { envoyerSansEchec, preparerReinitialisation, preparerVerification } from "@/lib/auth-courriels";
 import { courrielMotDePasseModifie } from "@/lib/email/modeles";
+import { ENTETE_IP_INTERNE } from "@/lib/ip-client";
+import { consommer, empreinte } from "@/lib/limite-debit";
 
 /**
  * Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie httpOnly sécurisé en production.
@@ -51,8 +53,19 @@ export const auth = betterAuth({
   session: { modelName: "session", expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   account: { modelName: "compte" },
   verification: { modelName: "verification" },
+  // L'adresse IP vient d'un en-tête interne, posé par le serveur à partir de CLIENT_IP_HEADER et TRUSTED_PROXY_COUNT
+  // (src/lib/ip-client.ts). Sans cela, derrière un proxy, Better Auth ne lit pas l'IP et met tout le monde dans le même compteur.
+  advanced: { ipAddress: { ipAddressHeaders: [ENTETE_IP_INTERNE] } },
   rateLimit: {
     enabled: true,
+    // Compteurs en base (table LimiteDebit) : ils survivent aux redémarrages et sont partagés entre instances.
+    // La clé de Better Auth contient l'IP : on la remplace par son empreinte HMAC, aucune adresse IP n'est écrite en clair en base.
+    customStorage: {
+      consume: async (cle, regle) => {
+        const r = await consommer(`route:${empreinte(cle)}`, { fenetre: regle.window, max: regle.max });
+        return { allowed: r.autorise, retryAfter: r.autorise ? null : Math.max(1, Math.ceil(r.resteSecondes)) };
+      },
+    },
     window: 60,
     max: 60,
     customRules: {

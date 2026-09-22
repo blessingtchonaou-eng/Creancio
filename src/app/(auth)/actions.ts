@@ -6,6 +6,8 @@ import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
 import { appelerRoute } from "@/lib/auth-route";
 import { fieldErrorsFrom, stringValues, type FormState } from "@/lib/form-state";
+import { lireIpClient } from "@/lib/ip-client";
+import { attenteAvantTentative, enregistrerEchec, MESSAGE_TROP_DE_TENTATIVES, reussite } from "@/lib/limites-auth";
 import { requireUser } from "@/lib/session";
 import { demandeReinitialisationSchema, nouveauMotDePasseSchema, signInSchema, signUpSchema } from "@/lib/validation/auth";
 
@@ -23,14 +25,20 @@ export async function inscription(_prev: FormState, formData: FormData): Promise
   const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues), values };
 
+  // Limite sur les échecs (par IP, par couple IP + adresse, par adresse) : auth.api ne passe pas par le limiteur du routeur.
+  const entetes = await headers();
+  const ip = lireIpClient(entetes);
+  const attente = await attenteAvantTentative("inscription", ip, parsed.data.email);
+  if (attente) return { error: MESSAGE_TROP_DE_TENTATIVES, values };
+
   try {
     await auth.api.signUpEmail({
       body: { name: parsed.data.nom, email: parsed.data.email, password: parsed.data.password, callbackURL: "/tableau-de-bord" },
-      headers: await headers(),
+      headers: entetes,
     });
   } catch (e) {
     if (e instanceof APIError) {
-      if (e.statusCode === 429) return { error: TROP_DE_TENTATIVES, values };
+      await enregistrerEchec("inscription", ip, parsed.data.email);
       const code = (e.body as { code?: string } | undefined)?.code ?? "";
       if (code.includes("USER_ALREADY_EXISTS")) {
         return { fieldErrors: { email: "Un compte existe déjà avec cet e-mail. Connectez-vous à la place." }, values };
@@ -49,16 +57,24 @@ export async function connexion(_prev: FormState, formData: FormData): Promise<F
   const parsed = signInSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues), values };
 
+  // Limite sur les échecs (par IP, par couple IP + adresse, par adresse) : auth.api ne passe pas par le limiteur du routeur.
+  // Même message de refus que le compte existe ou non.
+  const entetes = await headers();
+  const ip = lireIpClient(entetes);
+  const attente = await attenteAvantTentative("connexion", ip, parsed.data.email);
+  if (attente) return { error: MESSAGE_TROP_DE_TENTATIVES, values };
+
   try {
-    await auth.api.signInEmail({ body: { email: parsed.data.email, password: parsed.data.password }, headers: await headers() });
+    await auth.api.signInEmail({ body: { email: parsed.data.email, password: parsed.data.password }, headers: entetes });
   } catch (e) {
     if (e instanceof APIError) {
-      if (e.statusCode === 429) return { error: TROP_DE_TENTATIVES, values };
+      await enregistrerEchec("connexion", ip, parsed.data.email);
       // Même message que l'e-mail existe ou non : on ne révèle pas qui a un compte.
       return { error: "E-mail ou mot de passe incorrect. Vérifiez-les, puis réessayez.", values };
     }
     throw e;
   }
+  await reussite("connexion", ip, parsed.data.email);
   redirect(safeNext(formData.get("suite")));
 }
 

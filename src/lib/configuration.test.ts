@@ -12,7 +12,17 @@ describe("contrôles de démarrage", () => {
   });
 
   it("production complète : rien à signaler", () => {
-    expect(erreursConfiguration({ NODE_ENV: "production", EMAIL_DRIVER: "resend", RESEND_API_KEY: "re_cle", EMAIL_FROM: "Créancio <a@b.tg>", ADMIN_PLATEFORME_EMAILS: "moi@exemple.tg, toi@exemple.tg" })).toEqual([]);
+    expect(erreursConfiguration({ NODE_ENV: "production", EMAIL_DRIVER: "resend", RESEND_API_KEY: "re_cle", EMAIL_FROM: "Créancio <a@b.tg>", CLIENT_IP_HEADER: "x-forwarded-for", TRUSTED_PROXY_COUNT: "1", ADMIN_PLATEFORME_EMAILS: "moi@exemple.tg, toi@exemple.tg" })).toEqual([]);
+  });
+
+  it("production sans configuration de l'IP du visiteur : démarrage refusé", () => {
+    const base = { NODE_ENV: "production", EMAIL_DRIVER: "resend", RESEND_API_KEY: "re_cle", EMAIL_FROM: "Créancio <a@b.tg>" };
+    const p = erreursConfiguration(base).join(" ");
+    expect(p).toContain("CLIENT_IP_HEADER");
+    expect(p).toContain("TRUSTED_PROXY_COUNT");
+    expect(erreursConfiguration({ ...base, CLIENT_IP_HEADER: "x-forwarded-for", TRUSTED_PROXY_COUNT: "0" }).join(" ")).toContain("TRUSTED_PROXY_COUNT");
+    expect(erreursConfiguration({ ...base, CLIENT_IP_HEADER: "x forwarded", TRUSTED_PROXY_COUNT: "1" }).join(" ")).toContain("CLIENT_IP_HEADER");
+    expect(erreursConfiguration({ ...base, CLIENT_IP_HEADER: "x-real-ip", TRUSTED_PROXY_COUNT: "1" })).toEqual([]);
   });
 
   it("ADMIN_PLATEFORME_EMAILS : une entrée mal écrite est signalée (elle retirerait l'accès en silence)", () => {

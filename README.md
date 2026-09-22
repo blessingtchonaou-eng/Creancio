@@ -60,6 +60,7 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   (`src/lib/auth-courriels.ts`), donc aussi pour un appel direct de `/api/auth/request-password-reset`. Au-delà, le jeton est retiré et rien n'est envoyé.
 - Les actions serveur passent par `appelerRoute` (`src/lib/auth-route.ts`) pour que la limite par IP s'applique aussi à elles.
 - Confirmation d'adresse : e-mail à l'inscription, bandeau dans l'application tant qu'elle n'est pas confirmée (accès non bloqué).
+  **Limite de débit** (`LimiteDebit`, en base, empreintes HMAC : jamais d'IP ni d'e-mail en clair) : échecs de connexion et d'inscription limités par IP (20 / 15 min), par couple IP + adresse (10 / 15 min) et par adresse toutes IP confondues (50 / heure) ; message unique, compte connu ou non. L'IP du visiteur est lue selon `CLIENT_IP_HEADER` et `TRUSTED_PROXY_COUNT` (obligatoires en production, voir `.env.example`).
   Seule exception : l'administration de la plateforme exige une adresse listée dans `ADMIN_PLATEFORME_EMAILS` **et** confirmée (`requireAdminPlateforme()`).
 - **E-mails** (`src/lib/email/`) : `EMAIL_DRIVER` = `console` (défaut : l'e-mail et son lien s'affichent dans le terminal du serveur) ou `mailpit`
   (`docker compose up -d mailpit`, boîte sur http://localhost:8025). **Hors production, aucun e-mail ne part pour de vrai**, même avec une clé Resend ou Brevo.

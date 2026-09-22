@@ -174,6 +174,26 @@ describe("mot de passe oublié (HTTP)", () => {
     for (let i = 0; i < 4; i++) statuts.push((await demanderLien("personne-ne-porte-cette-adresse@example.com", ip)).status);
     expect(statuts).toEqual([200, 200, 200, 429]);
   });
+
+  it("l'en-tête interne x-creancio-ip envoyé par le visiteur ne change pas l'adresse sous laquelle il est compté", async () => {
+    const ip = ipAleatoire();
+    const statuts: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const r = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: BASE_URL, "x-forwarded-for": ip, "x-creancio-ip": ipAleatoire() },
+        body: JSON.stringify({ email: "personne-ne-porte-cette-adresse@example.com", redirectTo: "/nouveau-mot-de-passe" }),
+      });
+      statuts.push(r.status);
+    }
+    expect(statuts).toEqual([200, 200, 200, 429]);
+  });
+
+  it("les compteurs de la limite sont en base et ne contiennent aucune adresse IP en clair", async () => {
+    const lignes = await db.limiteDebit.findMany({ where: { cle: { startsWith: "route:" } }, take: 20 });
+    expect(lignes.length).toBeGreaterThan(0);
+    for (const l of lignes) expect(l.cle).toMatch(/^route:[0-9a-f]{32}$/);
+  });
 });
 
 /** Compare à un hachage scrypt de Better Auth. */
