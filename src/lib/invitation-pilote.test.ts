@@ -8,10 +8,11 @@ const UTILISATEUR = "test-invitation-utilisateur";
 const DEMANDE = "test-invitation-demande";
 const DEMANDE_INSCRITE = "test-invitation-demande-inscrite";
 const DEMANDE_ABANDONNEE = "test-invitation-demande-abandonnee";
+const DEMANDE_SUSPECTE = "test-invitation-demande-suspecte";
 
 async function nettoyer() {
-  await db.invitationPilote.deleteMany({ where: { demandePiloteId: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE] } } });
-  await db.demandePilote.deleteMany({ where: { id: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE] } } });
+  await db.invitationPilote.deleteMany({ where: { demandePiloteId: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE, DEMANDE_SUSPECTE] } } });
+  await db.demandePilote.deleteMany({ where: { id: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE, DEMANDE_SUSPECTE] } } });
   await db.utilisateur.deleteMany({ where: { id: { in: [ADMIN, UTILISATEUR] } } });
 }
 
@@ -32,13 +33,14 @@ describe("invitations d'inscription pilote", () => {
   });
 
   beforeEach(async () => {
-    await db.invitationPilote.deleteMany({ where: { demandePiloteId: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE] } } });
-    await db.demandePilote.deleteMany({ where: { id: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE] } } });
+    await db.invitationPilote.deleteMany({ where: { demandePiloteId: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE, DEMANDE_SUSPECTE] } } });
+    await db.demandePilote.deleteMany({ where: { id: { in: [DEMANDE, DEMANDE_INSCRITE, DEMANDE_ABANDONNEE, DEMANDE_SUSPECTE] } } });
     await db.demandePilote.createMany({
       data: [
         { id: DEMANDE, nomEntreprise: "Boutique Test", whatsapp: "+22890000001", consentement: true, statut: "NOUVELLE" },
         { id: DEMANDE_INSCRITE, nomEntreprise: "Déjà inscrite", whatsapp: "+22890000002", consentement: true, statut: "INSCRITE" },
         { id: DEMANDE_ABANDONNEE, nomEntreprise: "Abandonnée", whatsapp: "+22890000003", consentement: true, statut: "ABANDONNEE" },
+        { id: DEMANDE_SUSPECTE, nomEntreprise: "Suspecte", whatsapp: "+22890000004", consentement: true, statut: "SUSPECTE" },
       ],
     });
   });
@@ -51,10 +53,11 @@ describe("invitations d'inscription pilote", () => {
     expect(await verifierInvitation(r.jeton)).toEqual({ valide: true });
   });
 
-  it("refuse pour une demande introuvable, déjà inscrite ou abandonnée", async () => {
+  it("refuse pour une demande introuvable, déjà inscrite, abandonnée ou suspecte (à requalifier d'abord)", async () => {
     expect(await creerInvitation("id-inconnu", ADMIN)).toEqual({ ok: false, raison: "introuvable" });
     expect(await creerInvitation(DEMANDE_INSCRITE, ADMIN)).toEqual({ ok: false, raison: "deja_inscrite" });
     expect(await creerInvitation(DEMANDE_ABANDONNEE, ADMIN)).toEqual({ ok: false, raison: "abandonnee" });
+    expect(await creerInvitation(DEMANDE_SUSPECTE, ADMIN)).toEqual({ ok: false, raison: "suspecte" });
   });
 
   it("un jeton inconnu, vide ou nul n'est jamais valide", async () => {

@@ -18,7 +18,7 @@ function hacherJeton(jetonBrut: string): string {
   return createHmac("sha256", secret).update(`invitation:${jetonBrut}`).digest("hex");
 }
 
-export type CreationInvitation = { ok: true; jeton: string; expireLe: Date } | { ok: false; raison: "introuvable" | "deja_inscrite" | "abandonnee" };
+export type CreationInvitation = { ok: true; jeton: string; expireLe: Date } | { ok: false; raison: "introuvable" | "deja_inscrite" | "abandonnee" | "suspecte" };
 
 /**
  * Crée un lien d'inscription pour une demande de pilote. Invalide d'abord toute invitation non utilisée déjà émise
@@ -30,6 +30,8 @@ export async function creerInvitation(demandePiloteId: string, creeParId: string
   if (!demande) return { ok: false, raison: "introuvable" };
   if (demande.statut === "INSCRITE") return { ok: false, raison: "deja_inscrite" };
   if (demande.statut === "ABANDONNEE") return { ok: false, raison: "abandonnee" };
+  // Une demande suspecte (envoi en rafale, trop rapide) doit d'abord être requalifiée à la main depuis /admin/pilote.
+  if (demande.statut === "SUSPECTE") return { ok: false, raison: "suspecte" };
 
   const jeton = randomBytes(24).toString("base64url");
   const expireLe = new Date(Date.now() + DUREE_VALIDITE_MS);

@@ -16,8 +16,7 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
       deux pages. **À poser au niveau du proxy inverse en production** (nginx/Caddy devant l'application) : `add_header Cache-Control "no-store" always;` (nginx) ou
       équivalent Caddy, sur les chemins `/inscription` et `/nouveau-mot-de-passe`, en plus de (pas à la place de) la déclaration Next.js. À revisiter aussi si Next.js
       expose un jour un moyen documenté de l'imposer lui-même (Route Handler dédié, ou export d'une réponse personnalisée depuis une page).
-- [ ] **`/admin/pilote` : filtre par statut (voir les demandes SUSPECTE), export CSV.** La page actuelle liste les demandes (hors SUSPECTE) et permet de créer un lien
-      d'invitation ; le filtre et l'export du plan initial restent à construire.
+- [x] ~~`/admin/pilote` : filtre par statut (SUSPECTE incluse), export CSV~~ : fait (voir README, « Page d'accueil et demandes de pilote »).
 - [ ] **Message WhatsApp du lien d'invitation** : aujourd'hui un texte fixe dans le code (`src/components/admin/invitation-pilote.tsx`). À revoir une fois le ton
       définitif validé, et envisager l'envoi automatique (WhatsApp Cloud API) plutôt que le bouton wa.me à cliquer par l'administrateur.
 - [ ] **Envoi réel d'e-mails.** Domaine à acheter, SPF, DKIM et DMARC à publier chez Resend (ou Brevo), clé `RESEND_API_KEY` et `EMAIL_FROM` dans les variables
@@ -28,10 +27,8 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
       (VPS : nginx/Caddy avec `X-Forwarded-For $proxy_add_x_forwarded_for`, 1 proxy ; Vercel : 1 proxy ; Cloudflare devant nginx : 2), en envoyant un `x-forwarded-for` falsifié
       et en contrôlant l'adresse retenue. Sans en-tête lisible, tous les visiteurs partagent un même compteur (« ip-inconnue » ; côté Better Auth : « no-trusted-ip »).
 - [ ] **Import de « Montant payé »** (voir « Étape 5 »).
-- [x] ~~Administration de la plateforme (`/admin/pilote`)~~ : fait pour la liste et la création de lien d'invitation (`requireAdminPlateforme()` appelé dans le layout,
-      la page et l'action ; tests HTTP « anonyme → connexion », « non admin → 404 » dans `tests/http/admin-pilote.test.ts`). **Reste à faire** : export CSV, filtre par statut
-      (voir ci-dessus), et le chemin « admin autorisé » n'a pas encore été vérifié par un vrai appel HTTP (aucun compte `ADMIN_PLATEFORME_EMAILS` configuré dans cet
-      environnement de développement) — créez ce compte (voir README) pour le contrôler vous-même.
+- [x] ~~Administration de la plateforme (`/admin/pilote`)~~ : fait (liste, filtre, statut et note, lien d'invitation, export). `requireAdminPlateforme()` dans le layout,
+      la page, chaque action et l'export ; tests HTTP « anonyme → connexion », « non admin → 404 » (`admin-pilote`) et « admin autorisé » (`admin-pilote-contenu`).
 
 ## Authentification
 - [ ] Rendre la vérification d'e-mail **bloquante** avant le pilote (aujourd'hui : bandeau seulement, l'accès reste ouvert).
@@ -49,8 +46,21 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [ ] Service worker PWA complet (mode hors-ligne allégé en attendant : file d'attente locale).
 
 ## Conformité
-- [ ] Déclaration IPDCP.
-- [ ] Politique de confidentialité.
+- [ ] Déclaration IPDCP. Tant qu'elle n'est pas faite, aucune mention de la loi 2019-014 sur le site.
+- [ ] Politique de confidentialité et conditions : `/confidentialite` et `/conditions` ont un texte **provisoire** (`legal` dans `src/content/landing.ts`),
+      marqué « À compléter avant la mise en ligne ». À faire rédiger ; préciser l'hébergeur (il a techniquement accès aux données).
+- [ ] **Durée de conservation des demandes de pilote** (et des compteurs `LimiteDebit`) à décider et à écrire dans la politique de confidentialité ; aujourd'hui
+      on ne supprime jamais une demande.
+
+## Page d'accueil et pilote
+- [ ] **E-mail du pied de page** : `email` vaut `null` dans `src/content/landing.ts` (en attente du domaine), rien n'est affiché. Le numéro WhatsApp,
+      lui, est renseigné.
+- [ ] **Promesses « En préparation »** (`landing.ts`) : relances WhatsApp, repli SMS, paiement Flooz / Mixx by Yas, notification de paiement, calendrier
+      de relance, invitation de collaborateurs. Repasser chaque phrase au présent le jour où la fonction est livrée, pas avant.
+- [ ] **Exigence PayGate (validée)** : chaque PME a son propre compte marchand ; Créancio n'encaisse jamais pour autrui. C'est ce que promet
+      « Créancio ne détiendra jamais vos fonds » sur la page d'accueil.
+- [ ] Notification (e-mail ou WhatsApp) à l'équipe à chaque nouvelle demande de pilote : l'envoi d'e-mails existe, reste à décider qui la reçoit.
+- [ ] Image Open Graph (aperçu du lien dans WhatsApp) : volontairement absente pour garder une page légère.
 
 ## Étape 3 (onboarding)
 - [ ] Format du NIF à confirmer sur des factures réelles. Le format officiel de l'OTR n'est pas publié.

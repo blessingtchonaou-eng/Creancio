@@ -117,8 +117,34 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   **Ne pas utiliser le compte admin plateforme pour créer une entreprise ; utiliser un compte séparé pour tester l'application.**
 
 Tests : `npm test` (Vitest). `npm run test:http` vérifie, sur un serveur qui tourne (`npm run dev`), les codes HTTP et l'isolation entre entreprises. Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant. Lancez les suites HTTP une par une (`npx vitest run --config vitest.http.config.mts tests/http/<suite>.test.ts`) : la connexion est limitée à 5 par minute et par IP. Un préchauffage (`tests/http/prechauffage.ts`, une connexion) visite chaque page avant la suite pour que la compilation à froid du serveur de développement ne fasse pas dépasser les délais.
-La suite `admin-plateforme-redirection` demande un serveur qui connaît son compte de test comme administrateur de la plateforme :
-`ADMIN_PLATEFORME_EMAILS="admin-plateforme-test@example.com" npm run dev` (ajoutez vos adresses après une virgule). Sans cela, elle échoue et son message donne la commande à lancer.
+Les suites `admin-plateforme-redirection` et `admin-pilote-contenu` demandent un serveur qui connaît leur compte de test comme administrateur de la plateforme :
+`ADMIN_PLATEFORME_EMAILS="admin-plateforme-test@example.com" npm run dev` (ajoutez vos adresses après une virgule), ou la configuration
+`creancio-dev-tests-http` de `.claude/launch.json`. Sans cela, elles échouent et leur message donne la commande à lancer.
+
+## Page d'accueil et demandes de pilote
+
+- **« / » est la page d'accueil publique** (groupe de routes `src/app/(site)`, sans navigation de l'application ni `requireEntreprise()`).
+  Un visiteur connecté voit « Mon espace » à la place de « Se connecter », sans redirection. `/confidentialite` et `/conditions` :
+  textes provisoires, marqués « À compléter avant la mise en ligne ».
+- **Tous les textes sont dans `src/content/landing.ts`**, promesse par promesse : ce qui est livré est au présent, ce qui ne l'est pas
+  au futur avec l'étiquette « En préparation » (relances WhatsApp, SMS, paiement Flooz / Mixx by Yas, invitation de collaborateurs).
+  Aucun chiffre présenté comme un résultat, aucune statistique, aucun témoignage. Une coordonnée à `null` n'est pas affichée.
+  La variante `court` d'un texte s'affiche sous 768 px (maquette mobile). Composants : `src/components/site/`.
+- **Formulaire « Rejoindre le pilote »** (`src/lib/pilote.ts`, action `src/app/(site)/actions.ts`), sans captcha, marche sans JavaScript :
+  1. champ piège rempli : faux succès, rien d'enregistré ;
+  2. saisie invalide : erreurs par champ (le numéro est enregistré au format E.164, le nom tient sur une ligne) ;
+  3. jeton horodaté signé (posé au rendu de la page) : plus de 24 h → « le formulaire a expiré » ; moins de 3 s ou jeton invalide → `SUSPECTE` ;
+  4. **paliers par IP** (`src/lib/limite-pilote.ts`, compteurs `LimiteDebit`) sur les seuls envois valides : jusqu'à 20 par heure, enregistrés ;
+     de 21 à 100, enregistrés en `SUSPECTE` ; au-delà, faux succès et rien d'enregistré ;
+  5. une demande par numéro : un envoi normal met à jour la demande (statut et note gardés ; `ABANDONNEE` ou `SUSPECTE` repasse en `NOUVELLE`),
+     un envoi suspect ne touche jamais une demande existante. Toujours le même message de succès.
+- **Consentement** : la phrase de la case a une version (`CONSENTEMENTS` dans `landing.ts`). La version cochée et sa date sont
+  enregistrées sur la demande (`consentementVersion`, `consentementLe`). Ne jamais modifier le texte d'une version publiée : en ajouter une.
+- **`/admin/pilote`** : filtre par statut avec les nombres (« Toutes » exclut les suspectes, dont le nombre reste affiché), statut et note
+  (500 caractères), « Ouvrir dans WhatsApp », lien d'inscription (demandes Nouvelle ou Contactée seulement : une suspecte se requalifie
+  d'abord), pagination par 50, export CSV (`/admin/pilote/export`, filtre respecté, « ; », UTF-8 avec BOM, formules neutralisées).
+  Les textes saisis par des inconnus sont toujours affichés échappés ; le lien wa.me est construit depuis le numéro enregistré,
+  revérifié (`src/lib/whatsapp.ts`), jamais depuis une saisie brute.
 
 ## Sécurité
 

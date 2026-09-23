@@ -6,11 +6,12 @@ import { getSessionCookie } from "better-auth/cookies";
 // requireEntreprise() dans chaque page et chaque action. On ne renvoie jamais un visiteur connecté loin de
 // /connexion ici : un cookie périmé provoquerait une boucle de redirections. Les pages /connexion et
 // /inscription le font elles-mêmes, après lecture de la vraie session.
-const PUBLIC_PREFIXES = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/nouveau-mot-de-passe", "/api/auth"];
+const PUBLIC_PREFIXES = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/nouveau-mot-de-passe", "/api/auth", "/confidentialite", "/conditions"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // « / » (page d'accueil publique et envoi de son formulaire) par égalité exacte : un préfixe « / » rendrait tout public.
+  const isPublic = pathname === "/" || PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   if (!isPublic && !getSessionCookie(request)) {
     const url = new URL("/connexion", request.url);

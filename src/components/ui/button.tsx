@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export type Variant = "primary" | "secondary" | "ghost" | "danger";
+export type Variant = "primary" | "secondary" | "ghost" | "danger" | "inverse";
 export type Size = "md" | "lg" | "sm";
 
 const variants: Record<Variant, string> = {
@@ -11,6 +11,7 @@ const variants: Record<Variant, string> = {
   secondary: "bg-surface text-ink border border-border-strong hover:bg-surface-muted",
   ghost: "bg-transparent text-primary hover:bg-surface-muted",
   danger: "bg-danger text-on-primary hover:brightness-90",
+  inverse: "bg-inverse text-on-inverse hover:brightness-125",
 };
 
 const sizes: Record<Size, string> = {

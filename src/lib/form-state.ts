@@ -12,6 +12,8 @@ export interface FormState {
   doublon?: { whatsapp: string; clients: { id: string; nom: string }[] };
   /** Lien d'inscription pilote nouvellement créé : affiché une seule fois, jamais renvoyé après un rechargement. */
   invitationCreee?: { url: string; expireLe: string };
+  /** Formulaire pilote : nouveau jeton horodaté, quand l'ancien a expiré. */
+  jeton?: string;
 }
 
 /** Transforme les erreurs zod en erreurs par champ (la première erreur de chaque champ). */

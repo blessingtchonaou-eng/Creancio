@@ -6,6 +6,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Toast } from "@/components/ui/feedback";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { formatDate, toIsoDate } from "@/lib/format";
+import { lienWhatsApp } from "@/lib/whatsapp";
 
 /** Message prérempli du lien WhatsApp (wa.me) : le contact copie-colle le lien reçu, rien à installer côté Créancio. */
 function messageWhatsapp(url: string): string {
@@ -14,7 +15,7 @@ function messageWhatsapp(url: string): string {
 
 interface Props {
   demandePiloteId: string;
-  /** Numéro E.164 (+228XXXXXXXX) : wa.me veut les chiffres seuls, sans le +. */
+  /** Numéro E.164 enregistré (+228XXXXXXXX), revérifié par lienWhatsApp avant d'entrer dans l'adresse wa.me. */
   whatsapp: string;
 }
 
@@ -28,19 +29,18 @@ export function InvitationPilote({ demandePiloteId, whatsapp }: Props) {
 
   if (state.invitationCreee) {
     const { url, expireLe } = state.invitationCreee;
-    const numeroWa = whatsapp.replace(/[^\d]/g, "");
+    const lienWa = lienWhatsApp(whatsapp, messageWhatsapp(url));
     return (
       <div className="flex flex-col gap-2 rounded-lg border border-border-strong bg-surface-muted p-3 text-body-sm">
         <p className="font-semibold">Lien créé, valable jusqu&apos;au {formatDate(toIsoDate(new Date(expireLe)))}</p>
         <p className="break-all text-ink-muted">{url}</p>
-        <a
-          href={`https://wa.me/${numeroWa}?text=${encodeURIComponent(messageWhatsapp(url))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={buttonClasses("primary", "sm", "self-start")}
-        >
-          Envoyer par WhatsApp
-        </a>
+        {lienWa ? (
+          <a href={lienWa} target="_blank" rel="noopener noreferrer" className={buttonClasses("primary", "md", "self-start")}>
+            Envoyer par WhatsApp
+          </a>
+        ) : (
+          <p className="text-danger">Numéro WhatsApp invalide : copiez le lien et envoyez-le vous-même.</p>
+        )}
       </div>
     );
   }
@@ -48,7 +48,7 @@ export function InvitationPilote({ demandePiloteId, whatsapp }: Props) {
   return (
     <form action={formAction} className="flex flex-col gap-2">
       {state.error && <Toast tone="danger" title={state.error} />}
-      <SubmitButton variant="secondary" size="sm">
+      <SubmitButton variant="secondary" size="md">
         Créer un lien d&apos;inscription
       </SubmitButton>
     </form>

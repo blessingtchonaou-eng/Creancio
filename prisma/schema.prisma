@@ -260,6 +260,10 @@ model DemandePilote {
   ville           String              @default("Lomé")
   facturesParMois FacturesParMois?
   consentement    Boolean
+  // Preuve du consentement : version de la phrase cochée (CONSENTEMENTS dans src/content/landing.ts) et date du dernier
+  // envoi valide. Mises à jour à chaque envoi valide ; jamais modifiées depuis /admin/pilote.
+  consentementVersion String?
+  consentementLe      DateTime?
   statut          StatutDemandePilote @default(NOUVELLE)
   note            String? // 500 caractères au plus, contrôlé par le code
   createdAt       DateTime            @default(now())
