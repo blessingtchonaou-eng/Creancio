@@ -88,6 +88,11 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   `npx vitest run --config vitest.http.config.mts tests/http/inscription-fermee.test.ts` pour vérifier que la fermeture
   tient toujours. **TODO si une connexion sociale (Google, etc.) est ajoutée un jour** : sa création de compte devra
   aussi respecter `INSCRIPTIONS_OUVERTES` (le hook actuel ne couvre que `/sign-up/email`).
+- **Symptôme à connaître : une route répond « 404 This page could not be found » en développement alors qu'elle existe**
+  (vue deux fois : toutes les routes `/api/auth/*`, puis `/factures/import/modele`). Rien dans le journal du serveur, et la
+  même route marche au build (`npm run build`). Cause : cache de Turbopack périmé dans `.next/dev` (par exemple après
+  `prisma generate`, un changement de dépendances ou un build pendant que le serveur de dev tourne). Remède : arrêter
+  `npm run dev`, supprimer `.next/dev`, relancer. Le cache se reconstruit tout seul (première compilation plus lente).
 - **Créer un compte administrateur de la plateforme sans rouvrir les inscriptions publiques** (`scripts/creer-admin-plateforme.ts`).
   **En production**, sur le serveur, dans le dossier de l'application, après le build (qui génère `src/generated/prisma`) :
   ```bash
