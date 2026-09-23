@@ -67,7 +67,53 @@ Better Auth : e-mail + mot de passe (haché en scrypt), sessions en base, cookie
   En production : `resend` (ou `brevo`), avec sa clé et `EMAIL_FROM` ; sans eux, le processus s'arrête avec le code 1 et un message clair (`src/instrumentation.ts`), donc le déploiement échoue au lieu de servir des pages en erreur. En développement, l'erreur s'affiche dans le navigateur et le serveur reste en vie.
   Pour essayer un build de production en local, il faut donc définir ces variables (ou lancer `npm run dev`).
 
+### Inscription pendant le pilote (lien d'invitation)
+
+- `INSCRIPTIONS_OUVERTES` (`.env.example`, `false` par défaut) : tant qu'elle n'est pas `"true"`, `/inscription` n'accepte
+  qu'un lien d'invitation à usage unique, valable 7 jours (`src/lib/invitation-pilote.ts`, table `InvitationPilote`).
+  Sans jeton valide, ni la page ni la Server Action `inscription()` ne créent de compte.
+- Le lien se crée depuis `/admin/pilote` (bouton « Créer un lien d'inscription » sur une demande), à copier ou à envoyer
+  directement par WhatsApp (`wa.me`, message prérempli). Créer un nouveau lien invalide l'ancien s'il n'a pas servi :
+  un seul lien actif par demande. À l'inscription, la demande passe automatiquement au statut INSCRITE.
+- Le jeton en clair n'est jamais stocké (seule son empreinte HMAC) ni mis dans une redirection : il n'apparaît que dans
+  le résultat affiché une fois à l'administrateur, et dans l'adresse `/inscription?invitation=...` envoyée au contact.
+  Cette page pose `Referrer-Policy: no-referrer` (`next.config.ts`) ; `Cache-Control: no-store` y est aussi déclaré mais
+  pas obtenu tel quel sur le fil, voir TODO-PRODUCTION.md.
+- **Fermeture de la route Better Auth elle-même** : `auth.api.signUpEmail` contourne le routeur (comme pour la limite
+  de débit ci-dessus). Un `hooks.before` (`src/lib/auth.ts`) refuse tout appel HTTP direct à `/api/auth/sign-up/email`
+  quand `INSCRIPTIONS_OUVERTES` n'est pas `"true"`, en le distinguant de l'appel interne de `inscription()` (qui a déjà
+  vérifié le jeton) par la présence de `ctx.request` — absent pour un appel direct à `auth.api.*`, présent pour un
+  appel passé par le routeur HTTP. **`ctx.request` est un détail interne de `better-call`** (la bibliothèque de routage
+  de Better Auth), pas une option documentée : après toute mise à jour de `better-auth` (ou de `better-call`), relancez
+  `npx vitest run --config vitest.http.config.mts tests/http/inscription-fermee.test.ts` pour vérifier que la fermeture
+  tient toujours. **TODO si une connexion sociale (Google, etc.) est ajoutée un jour** : sa création de compte devra
+  aussi respecter `INSCRIPTIONS_OUVERTES` (le hook actuel ne couvre que `/sign-up/email`).
+- **Créer un compte administrateur de la plateforme sans rouvrir les inscriptions publiques** (`scripts/creer-admin-plateforme.ts`).
+  **En production**, sur le serveur, dans le dossier de l'application, après le build (qui génère `src/generated/prisma`) :
+  ```bash
+  NODE_ENV=production npm run admin:creer -- --email admin@creancio.tg --nom "Prénom Nom"
+  ```
+  - Fonctionne après `npm ci --omit=dev` : `tsx` (exécution du TypeScript) et `@next/env` (lecture des `.env*`) sont dans
+    `dependencies`. Le script lit les mêmes fichiers `.env*` que `next start`, sans écraser les variables posées par l'hébergeur.
+  - **`NODE_ENV=production` est obligatoire** : sans lui, les e-mails restent en mode `console` et la confirmation ne part pas.
+    Le script affiche l'environnement et le pilote d'e-mail avant toute question, et refuse de créer le compte si la
+    configuration de démarrage est invalide (mêmes contrôles que `src/instrumentation.ts`).
+  - Le mot de passe se saisit au terminal, sans écho (jamais en argument, jamais dans l'historique du shell).
+  - Le script appelle `auth.api.signUpEmail` directement (pas de requête HTTP) : `ctx.request` est absent et le hook de
+    fermeture ne s'applique pas — inutile de toucher `INSCRIPTIONS_OUVERTES`. L'e-mail de confirmation part normalement ;
+    le lien mène à `/admin/pilote`.
+  - Listez ensuite l'adresse dans `ADMIN_PLATEFORME_EMAILS` et redémarrez l'application. `requireAdminPlateforme()` n'exige
+    qu'une adresse listée et confirmée, jamais d'entreprise (`entrepriseId` reste `null`, le rôle COLLABORATEUR par défaut
+    n'a ici aucun effet).
+  - En développement : `npm run admin:creer -- --email ... --nom "..."` (l'e-mail s'affiche dans le terminal).
+- **Administrateur de la plateforme sans entreprise** : après connexion, il arrive sur `/admin/pilote` (`requireEntreprise()`
+  et le layout d'onboarding l'y renvoient), jamais sur l'onboarding. Un utilisateur sans entreprise qui n'est pas
+  administrateur de la plateforme va toujours sur `/bienvenue`.
+  **Ne pas utiliser le compte admin plateforme pour créer une entreprise ; utiliser un compte séparé pour tester l'application.**
+
 Tests : `npm test` (Vitest). `npm run test:http` vérifie, sur un serveur qui tourne (`npm run dev`), les codes HTTP et l'isolation entre entreprises. Les tests d'intégration utilisent la base `creancio_dev` : lancez `docker compose up -d` avant. Lancez les suites HTTP une par une (`npx vitest run --config vitest.http.config.mts tests/http/<suite>.test.ts`) : la connexion est limitée à 5 par minute et par IP. Un préchauffage (`tests/http/prechauffage.ts`, une connexion) visite chaque page avant la suite pour que la compilation à froid du serveur de développement ne fasse pas dépasser les délais.
+La suite `admin-plateforme-redirection` demande un serveur qui connaît son compte de test comme administrateur de la plateforme :
+`ADMIN_PLATEFORME_EMAILS="admin-plateforme-test@example.com" npm run dev` (ajoutez vos adresses après une virgule). Sans cela, elle échoue et son message donne la commande à lancer.
 
 ## Sécurité
 

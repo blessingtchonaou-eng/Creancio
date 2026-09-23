@@ -6,7 +6,20 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 - [x] ~~Limiteur de débit en base~~ : fait (table `LimiteDebit`, `customStorage` de Better Auth dans `src/lib/auth.ts`).
 - [x] ~~Actions de connexion et d'inscription hors limite~~ : fait. Limites sur les ÉCHECS (`src/lib/limites-auth.ts`) : 20 par IP / 15 min, 10 par couple IP + adresse / 15 min, 50 par adresse / heure.
 - [ ] **Inscription : seuls les échecs sont limités.** Créer des comptes avec des adresses toutes valides n'est pas freiné par les actions (seule la route `/api/auth/sign-up/email`
-      garde sa limite de 5 par minute et par IP). À trancher avant la landing : limite sur les créations réussies (par IP, par heure) et confirmation d'adresse avant tout envoi de relance.
+      garde sa limite de 5 par minute et par IP). Sans objet tant que `INSCRIPTIONS_OUVERTES=false` (inscription fermée, sur invitation) : à trancher avant de la repasser à `true`
+      à la fin du pilote — limite sur les créations réussies (par IP, par heure) et confirmation d'adresse avant tout envoi de relance.
+- [x] ~~Inscription publique fermée pendant le pilote~~ : fait (`INSCRIPTIONS_OUVERTES`, lien d'invitation à usage unique, `src/lib/invitation-pilote.ts`).
+      **Rester vigilant** : repasser `INSCRIPTIONS_OUVERTES=true` avant d'ouvrir vraiment les inscriptions, sinon seuls les liens d'invitation continueront de marcher.
+- [ ] **BLOQUANT AVANT MISE EN LIGNE — `Cache-Control: no-store` déclaré mais pas obtenu sur `/inscription` et `/nouveau-mot-de-passe`.** `next.config.ts` le déclare, mais Next.js impose son propre
+      `Cache-Control` aux pages dynamiques (« no-cache, must-revalidate ») qui l'emporte sur le fil (vérifié par requête directe). L'effet pratique reste proche (pas de
+      copie servie sans revalidation), mais ce n'est pas une interdiction stricte de stockage : un jeton (réinitialisation, invitation pilote) est dans l'adresse de ces
+      deux pages. **À poser au niveau du proxy inverse en production** (nginx/Caddy devant l'application) : `add_header Cache-Control "no-store" always;` (nginx) ou
+      équivalent Caddy, sur les chemins `/inscription` et `/nouveau-mot-de-passe`, en plus de (pas à la place de) la déclaration Next.js. À revisiter aussi si Next.js
+      expose un jour un moyen documenté de l'imposer lui-même (Route Handler dédié, ou export d'une réponse personnalisée depuis une page).
+- [ ] **`/admin/pilote` : filtre par statut (voir les demandes SUSPECTE), export CSV.** La page actuelle liste les demandes (hors SUSPECTE) et permet de créer un lien
+      d'invitation ; le filtre et l'export du plan initial restent à construire.
+- [ ] **Message WhatsApp du lien d'invitation** : aujourd'hui un texte fixe dans le code (`src/components/admin/invitation-pilote.tsx`). À revoir une fois le ton
+      définitif validé, et envisager l'envoi automatique (WhatsApp Cloud API) plutôt que le bouton wa.me à cliquer par l'administrateur.
 - [ ] **Envoi réel d'e-mails.** Domaine à acheter, SPF, DKIM et DMARC à publier chez Resend (ou Brevo), clé `RESEND_API_KEY` et `EMAIL_FROM` dans les variables
       d'environnement. Sans elles, le démarrage en production échoue (`src/instrumentation.ts` : message clair, le processus s'arrête avec le code 1). Un essai réel de bout en bout reste à faire.
 - [ ] **Envoi d'e-mail en arrière-plan.** L'envoi n'est pas attendu (pour que la durée de la réponse ne trahisse pas l'existence du compte).
@@ -15,8 +28,10 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
       (VPS : nginx/Caddy avec `X-Forwarded-For $proxy_add_x_forwarded_for`, 1 proxy ; Vercel : 1 proxy ; Cloudflare devant nginx : 2), en envoyant un `x-forwarded-for` falsifié
       et en contrôlant l'adresse retenue. Sans en-tête lisible, tous les visiteurs partagent un même compteur (« ip-inconnue » ; côté Better Auth : « no-trusted-ip »).
 - [ ] **Import de « Montant payé »** (voir « Étape 5 »).
-- [ ] **Administration de la plateforme (`/admin/pilote`, export).** Chaque page, action et route d'export doit appeler `requireAdminPlateforme()` (`src/lib/session.ts`) :
-      adresse dans `ADMIN_PLATEFORME_EMAILS` ET confirmée, sinon 404. Le refus est testé en unitaire ; ajouter les tests HTTP « non vérifié → 404 » quand ces pages existent.
+- [x] ~~Administration de la plateforme (`/admin/pilote`)~~ : fait pour la liste et la création de lien d'invitation (`requireAdminPlateforme()` appelé dans le layout,
+      la page et l'action ; tests HTTP « anonyme → connexion », « non admin → 404 » dans `tests/http/admin-pilote.test.ts`). **Reste à faire** : export CSV, filtre par statut
+      (voir ci-dessus), et le chemin « admin autorisé » n'a pas encore été vérifié par un vrai appel HTTP (aucun compte `ADMIN_PLATEFORME_EMAILS` configuré dans cet
+      environnement de développement) — créez ce compte (voir README) pour le contrôler vous-même.
 
 ## Authentification
 - [ ] Rendre la vérification d'e-mail **bloquante** avant le pilote (aujourd'hui : bandeau seulement, l'accès reste ouvert).
@@ -44,6 +59,9 @@ Points volontairement reportés. Ajouter ici ce qui est repoussé à chaque éta
 
 ## Sécurité
 - [ ] Réexaminer `npm audit` quand un correctif Prisma 7.x sort (voir README, section « Sécurité »).
+- [ ] **`tsx` est une dépendance de production** pour le seul script `npm run admin:creer`, lancé une fois (`scripts/creer-admin-plateforme.ts`).
+      À simplifier : compiler le script au build (JavaScript lancé avec `node`), pour ne pas embarquer un outil de développement en production,
+      puis remettre `tsx` en devDependency. `@next/env` peut rester en dépendance (déjà installé par `next`, même version).
 
 ## Étape 5 (import)
 - [ ] Import : ajouter la colonne facultative « Statut » (facture déjà payée) et « Montant payé ».

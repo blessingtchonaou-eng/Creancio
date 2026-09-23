@@ -6,6 +6,8 @@ import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
 import { appelerRoute } from "@/lib/auth-route";
 import { fieldErrorsFrom, stringValues, type FormState } from "@/lib/form-state";
+import { inscriptionsOuvertes } from "@/lib/inscriptions";
+import { finaliserInvitation, libererInvitation, MESSAGE_INVITATION_INVALIDE, reserverInvitation } from "@/lib/invitation-pilote";
 import { lireIpClient } from "@/lib/ip-client";
 import { attenteAvantTentative, enregistrerEchec, MESSAGE_TROP_DE_TENTATIVES, reussite } from "@/lib/limites-auth";
 import { requireUser } from "@/lib/session";
@@ -31,12 +33,24 @@ export async function inscription(_prev: FormState, formData: FormData): Promise
   const attente = await attenteAvantTentative("inscription", ip, parsed.data.email);
   if (attente) return { error: MESSAGE_TROP_DE_TENTATIVES, values };
 
+  // Inscription publique fermée pendant le pilote : un jeton d'invitation valide, non expiré et pas encore utilisé
+  // est obligatoire. Réservé ici (atomique, usage unique) avant d'appeler Better Auth, jamais seulement vérifié
+  // côté page — la page n'est qu'un confort d'affichage, le vrai contrôle est ici.
+  let reservation: Awaited<ReturnType<typeof reserverInvitation>> = null;
+  if (!inscriptionsOuvertes()) {
+    const jeton = formData.get("invitation");
+    reservation = typeof jeton === "string" && jeton ? await reserverInvitation(jeton) : null;
+    if (!reservation) return { error: MESSAGE_INVITATION_INVALIDE, values };
+  }
+
+  let resultat: Awaited<ReturnType<typeof auth.api.signUpEmail>>;
   try {
-    await auth.api.signUpEmail({
+    resultat = await auth.api.signUpEmail({
       body: { name: parsed.data.nom, email: parsed.data.email, password: parsed.data.password, callbackURL: "/tableau-de-bord" },
       headers: entetes,
     });
   } catch (e) {
+    if (reservation) await libererInvitation(reservation.id);
     if (e instanceof APIError) {
       await enregistrerEchec("inscription", ip, parsed.data.email);
       const code = (e.body as { code?: string } | undefined)?.code ?? "";
@@ -46,6 +60,13 @@ export async function inscription(_prev: FormState, formData: FormData): Promise
       return { error: "Le compte n'a pas pu être créé. Vérifiez les champs, puis réessayez.", values };
     }
     throw e;
+  }
+
+  if (reservation) {
+    // Best-effort : le compte existe déjà et c'est ce qui compte. Un échec ici est journalisé, pas remonté au visiteur.
+    await finaliserInvitation(reservation.id, reservation.demandePiloteId, resultat.user.id).catch((err) => {
+      console.error("Invitation pilote : impossible de la finaliser après une inscription réussie.", err);
+    });
   }
   redirect("/bienvenue");
 }

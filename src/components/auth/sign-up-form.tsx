@@ -7,11 +7,12 @@ import { PasswordField } from "@/components/ui/password-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Toast } from "@/components/ui/feedback";
 
-export function SignUpForm() {
+export function SignUpForm({ invitation }: { invitation?: string }) {
   const [state, action] = useActionState(inscription, {});
   const err = state.fieldErrors ?? {};
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
+      {invitation && <input type="hidden" name="invitation" value={invitation} />}
       {state.error && <Toast tone="danger" title={state.error} />}
       <Field label="Votre nom" name="nom" autoComplete="name" defaultValue={state.values?.nom} error={err.nom} />
       <Field

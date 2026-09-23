@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/lib/db";
 import { envoyerSansEchec, preparerReinitialisation, preparerVerification } from "@/lib/auth-courriels";
 import { courrielMotDePasseModifie } from "@/lib/email/modeles";
+import { inscriptionsOuvertes } from "@/lib/inscriptions";
 import { ENTETE_IP_INTERNE } from "@/lib/ip-client";
 import { consommer, empreinte } from "@/lib/limite-debit";
 
@@ -76,6 +78,20 @@ export const auth = betterAuth({
       "/reset-password": { window: 60, max: 10 },
       "/send-verification-email": { window: 60, max: 3 },
     },
+  },
+  hooks: {
+    // Inscription publique fermée pendant le pilote (INSCRIPTIONS_OUVERTES) : refuse un appel HTTP direct sur la
+    // route (ctx.request présent). L'action serveur inscription() (src/app/(auth)/actions.ts) appelle
+    // auth.api.signUpEmail(...) sans passer de `request` : ctx.request y est absent, l'appel passe donc, mais
+    // seulement après qu'elle a vérifié elle-même un jeton d'invitation valide (src/lib/invitation-pilote.ts).
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-up/email" && ctx.request && !inscriptionsOuvertes()) {
+        throw new APIError("FORBIDDEN", {
+          message: "Les inscriptions sont fermées pendant la phase pilote.",
+          code: "SIGN_UPS_CLOSED",
+        });
+      }
+    }),
   },
   plugins: [nextCookies()],
 });

@@ -11,10 +11,12 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:up": "docker compose up -d",
+    "admin:creer": "tsx scripts/creer-admin-plateforme.ts",
     "test": "vitest run",
     "test:http": "vitest run --config vitest.http.config.mts"
   },
   "dependencies": {
+    "@next/env": "16.3.5",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
     "better-auth": "^1.7.5",
@@ -24,6 +26,7 @@
     "pg": "^8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "tsx": "^4.23.15",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -35,7 +38,6 @@
     "dotenv": "^18.0.1",
     "prisma": "7.10.0",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^5.0.1"
   }

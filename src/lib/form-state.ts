@@ -10,6 +10,8 @@ export interface FormState {
   success?: string;
   /** Numéro déjà utilisé par d'autres clients : l'utilisateur doit confirmer ou ouvrir la fiche existante. */
   doublon?: { whatsapp: string; clients: { id: string; nom: string }[] };
+  /** Lien d'inscription pilote nouvellement créé : affiché une seule fois, jamais renvoyé après un rechargement. */
+  invitationCreee?: { url: string; expireLe: string };
 }
 
 /** Transforme les erreurs zod en erreurs par champ (la première erreur de chaque champ). */

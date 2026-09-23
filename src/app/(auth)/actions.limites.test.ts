@@ -41,6 +41,8 @@ let inscription: typeof import("./actions").inscription;
 
 beforeAll(async () => {
   vi.stubEnv("BETTER_AUTH_URL", "http://localhost:3000");
+  // Ce fichier teste les limites de débit, pas la fermeture de l'inscription pendant le pilote (voir actions.invitation.test.ts).
+  vi.stubEnv("INSCRIPTIONS_OUVERTES", "true");
   ({ connexion, inscription } = await import("./actions"));
   const u = await db.utilisateur.create({ data: { nom: "Test Limite", email: EMAIL_EXISTANT, emailVerified: true, role: "COLLABORATEUR" } });
   await db.compte.create({ data: { userId: u.id, accountId: u.id, providerId: "credential", password: await hashPassword(MOT_DE_PASSE) } });

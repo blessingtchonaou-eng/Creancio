@@ -76,6 +76,8 @@ model Utilisateur {
   sessions      Session[]
   comptes       Compte[]
   paiementsAnnules Paiement[]
+  invitationsCreees    InvitationPilote[] @relation("InvitationCreee")
+  invitationsUtilisees InvitationPilote[] @relation("InvitationUtilisee")
 
   @@index([entrepriseId])
 }
@@ -262,8 +264,29 @@ model DemandePilote {
   note            String? // 500 caractères au plus, contrôlé par le code
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
+  invitations     InvitationPilote[]
 
   @@index([statut, createdAt])
+}
+
+// Lien d'inscription à usage unique, créé depuis /admin/pilote pendant que l'inscription publique est fermée
+// (INSCRIPTIONS_OUVERTES=false). Le jeton en clair n'est jamais stocké : seule son empreinte HMAC (src/lib/limite-debit.ts).
+// On ne supprime jamais une invitation (onDelete: Restrict) : c'est la trace de qui a créé et utilisé le lien.
+model InvitationPilote {
+  id              String        @id @default(cuid())
+  demandePiloteId String
+  demandePilote   DemandePilote @relation(fields: [demandePiloteId], references: [id], onDelete: Restrict)
+  jetonHache      String        @unique
+  expireLe        DateTime // createdAt + 7 jours
+  utiliseLe       DateTime? // non nul = jeton déjà consommé (usage unique)
+  utiliseParId    String?
+  utilisePar      Utilisateur?  @relation("InvitationUtilisee", fields: [utiliseParId], references: [id], onDelete: Restrict)
+  creeParId       String
+  creePar         Utilisateur   @relation("InvitationCreee", fields: [creeParId], references: [id], onDelete: Restrict)
+  createdAt       DateTime      @default(now())
+
+  @@index([demandePiloteId])
+  @@index([expireLe])
 }
 
 // Compteurs de limite de débit (connexion, inscription, routes d'authentification, formulaire pilote de la page d'accueil).

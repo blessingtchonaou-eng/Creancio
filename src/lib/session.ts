@@ -18,12 +18,18 @@ export async function requireUser() {
 /**
  * Point d'entrée unique pour tout écran ou action qui touche aux données d'une entreprise.
  * L'entrepriseId vient toujours d'ici, jamais du navigateur : c'est ce qui garantit l'isolation entre entreprises.
- * Tant que l'utilisateur n'a pas d'entreprise, il est renvoyé vers /bienvenue.
+ * Tant que l'utilisateur n'a pas d'entreprise, il est renvoyé vers /bienvenue, sauf l'administrateur de la
+ * plateforme (compte sans entreprise par conception) : il est renvoyé vers /admin/pilote.
  */
 export async function requireEntreprise() {
   const user = await requireUser();
-  if (!user.entrepriseId) redirect("/bienvenue");
+  if (!user.entrepriseId) redirect(sansEntreprise(user));
   return { user, entrepriseId: user.entrepriseId, role: user.role as "ADMIN" | "COLLABORATEUR" };
+}
+
+/** Où envoyer un utilisateur connecté qui n'a pas d'entreprise. */
+export function sansEntreprise(user: { email: string; emailVerified: boolean }) {
+  return estAdminPlateforme(user.email, user.emailVerified) ? "/admin/pilote" : "/bienvenue";
 }
 
 /** Comme requireEntreprise, réservé aux administrateurs. */
